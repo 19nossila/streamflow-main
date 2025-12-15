@@ -10,81 +10,67 @@ interface PlaylistSelectorProps {
 }
 
 const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ playlists, onSelect, onSelectAll, onLogout, isAdmin }) => {
-  return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center p-8">
-      <div className="w-full max-w-4xl">
-        <div className="flex justify-between items-center mb-10 border-b border-gray-700 pb-4">
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                <i className="fas fa-play-circle text-red-500"></i> StreamFlow
-            </h1>
-            <button onClick={onLogout} className="text-gray-400 hover:text-white flex items-center gap-2">
-                <i className="fas fa-sign-out-alt"></i> Logout
+
+  const Header = () => (
+    <div className="flex justify-between items-center p-4 bg-gray-900 border-b border-gray-700">
+        <h1 className="text-xl font-bold text-red-500 flex items-center gap-2"><i className="fas fa-play-circle"></i> StreamFlow</h1>
+        <div className="flex items-center gap-4">
+            {isAdmin && (
+                <button onClick={() => { alert("Admin dashboard not implemented in this component yet.") }} className="text-gray-400 hover:text-white transition-colors">
+                    <i className="fas fa-cog"></i>
+                </button>
+            )}
+            <button onClick={onLogout} className="text-gray-400 hover:text-white transition-colors">
+                <i className="fas fa-sign-out-alt"></i><span className="hidden sm:inline ml-2">Logout</span>
             </button>
         </div>
+    </div>
+  );
 
-        <h2 className="text-xl text-gray-300 mb-6">Select a Playlist</h2>
-        
-        {playlists.length === 0 ? (
-           <div className="text-center py-20 bg-gray-800 rounded-lg border border-gray-700">
-               <i className="fas fa-folder-open text-5xl text-gray-600 mb-4"></i>
-               <p className="text-gray-400 text-lg">No playlists available.</p>
-               <p className="text-gray-500 text-sm mt-2">Please contact the administrator to add content.</p>
-           </div>
-        ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  return (
+    <div className="min-h-screen bg-gray-900">
+        <Header />
+        <main className="p-4 sm:p-8">
+            <div className="max-w-4xl mx-auto">
+                <h2 className="text-2xl font-semibold mb-6 text-white">Select a Playlist</h2>
                 
-                {/* All Combined Option */}
-                {playlists.length > 1 && (
-                    <button 
-                        onClick={onSelectAll}
-                        className="col-span-full md:col-span-full bg-gradient-to-r from-red-900 to-gray-900 hover:from-red-800 hover:to-gray-800 border border-red-700/50 rounded-xl p-6 text-left transition-all shadow-xl group relative overflow-hidden flex items-center gap-6"
-                    >
-                        <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-lg shrink-0">
-                            <i className="fas fa-layer-group text-2xl text-white"></i>
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-white mb-1">Unified Library</h3>
-                            <p className="text-gray-300 text-sm">Merge all {playlists.length} playlists into one.</p>
-                        </div>
-                    </button>
-                )}
+                 {playlists.length === 0 ? (
+                    <div className="text-center bg-gray-800 p-8 rounded-lg border border-gray-700">
+                        <i className="fas fa-list-ol text-4xl text-gray-500 mb-4"></i>
+                        <h3 className="text-xl font-semibold">No Playlists Found</h3>
+                        <p className="text-gray-400 mt-2">Admins can create new playlists in the dashboard.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {playlists.map((playlist) => (
+                            <button
+                                key={playlist.id}
+                                onClick={() => onSelect(playlist)}
+                                className="bg-gray-800 rounded-lg p-6 text-left hover:bg-gray-700 hover:scale-105 transition-transform duration-200 shadow-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-lg font-bold text-white">{playlist.name}</h3>
+                                    <i className="fas fa-chevron-right text-gray-500"></i>
+                                </div>
+                                <p className="text-sm text-gray-400 mt-2">{playlist.sources.length} source(s)</p>
+                            </button>
+                        ))}
 
-                {/* Individual Playlists */}
-                {playlists.map(pl => (
-                    <button 
-                        key={pl.id} 
-                        onClick={() => onSelect(pl)}
-                        className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 rounded-xl p-6 text-left transition-all group relative overflow-hidden flex flex-col h-40"
-                    >
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <i className="fas fa-tv text-6xl"></i>
-                        </div>
-                        
-                        <div className="relative z-10 flex-1">
-                            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-red-400 transition-colors truncate" title={pl.name}>{pl.name}</h3>
-                            <div className="flex items-center text-sm text-gray-500">
-                                <span className="bg-gray-900 px-2 py-1 rounded text-xs border border-gray-600">
-                                    {pl.sources.length} Source{pl.sources.length !== 1 ? 's' : ''}
-                                </span>
+                        {/* "Load All" Card */}
+                        <button
+                            onClick={onSelectAll}
+                            className="bg-red-800 rounded-lg p-6 text-left hover:bg-red-700 hover:scale-105 transition-transform duration-200 shadow-lg border border-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-lg font-bold text-white">Load All Playlists</h3>
+                                <i className="fas fa-globe text-red-300"></i>
                             </div>
-                        </div>
-                        
-                        <div className="relative z-10 mt-4 flex items-center text-xs text-gray-400 group-hover:text-gray-300">
-                            <span>Click to watch</span>
-                            <i className="fas fa-arrow-right ml-2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-[-5px] group-hover:translate-x-0"></i>
-                        </div>
-                    </button>
-                ))}
+                            <p className="text-sm text-red-200 mt-2">Merge and play all channels</p>
+                        </button>
+                    </div>
+                )}
             </div>
-        )}
-
-        {isAdmin && (
-            <div className="mt-12 text-center">
-                 <p className="text-gray-500 text-sm mb-2">You are logged in as Admin</p>
-                 <button onClick={() => window.location.reload()} className="text-blue-400 hover:underline">Return to Dashboard (Reload)</button>
-            </div>
-        )}
-      </div>
+        </main>
     </div>
   );
 };
