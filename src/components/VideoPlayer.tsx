@@ -32,7 +32,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
         video.load();
         video.addEventListener('error', (e) => {
             console.error("[VideoPlayer] Error playing proxied MP4:", e);
-            setError('The server proxy could not play this video file.');
+            // MODIFIED ERROR: Display the URL that was attempted
+            setError(`Proxy error. Attempted to connect to: ${API_URL}`);
         });
 
     } else if (Hls.isSupported()) {
@@ -41,7 +42,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
         hls = new Hls();
         hls.loadSource(url);
         hls.attachMedia(video);
-        // (Error handling for HLS is the same as before)
         hls.on(Hls.Events.ERROR, function (event, data) {
             if (data.fatal) {
                 let errorMessage = 'An unknown error occurred with HLS.js.';
@@ -81,10 +81,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
       {error ? (
-        <div className="text-center p-8 bg-gray-900/80 rounded-xl border border-red-500/50">
+        <div className="text-center p-8 bg-gray-900/80 rounded-xl border border-red-500/50 max-w-lg mx-4">
           <i className="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
           <p className="text-white text-lg font-medium mb-2">Stream Unavailable</p>
-          <p className="text-gray-400 text-sm">{error}</p>
+          <p className="text-gray-400 text-sm break-all">{error}</p>
         </div>
       ) : (
         <video
