@@ -5,6 +5,7 @@ import bodyParser from 'body-parser';
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import axios from 'axios'; // Import axios
 
 // Set up __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -15,55 +16,66 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
-
-// Increase the limit for JSON and URL-encoded bodies
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-// Database setup - Use a specific path and a direct constructor
-const dbPath = path.resolve(__dirname, 'database.db');
+// --- DATABASE SETUP (Omitted for brevity, no changes here) ---
+const isRender = process.env.RENDER === 'true';
+const diskMountPath = process.env.RENDER_DISK_MOUNT_PATH;
+let dbPath;
+if (isRender && diskMountPath) {
+    dbPath = path.join(diskMountPath, 'database.db');
+    console.log(`[SERVER] Running on Render. Using persistent disk for database at: ${dbPath}`);
+} else {
+    dbPath = path.resolve(__dirname, 'database.db');
+    console.log(`[SERVER] Not on Render or disk not found. Using local database at: ${dbPath}`);
+}
 const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error("[SERVER ERROR] Could not connect to database:", err.message);
-  } else {
-    console.log("[SERVER] Connected to the SQLite database.");
-
-    // Serialize execution to ensure tables are created in order
-    db.serialize(() => {
-        // Create tables
-        db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT)`, (err) => {
-            if(err) console.error("Error creating users table:", err.message);
+    if (err) console.error("[SERVER ERROR] Could not connect to database:", err.message);
+    else {
+        console.log("[SERVER] Connected to the SQLite database.");
+        db.serialize(() => {
+            db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT)`);
+            db.run(`CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)`);
+            db.run(`CREATE TABLE IF NOT EXISTS playlist_sources (id INTEGER PRIMARY KEY AUTOINCREMENT, playlist_id INTEGER, type TEXT, content TEXT, identifier TEXT, addedAt TEXT, FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE)`);
+            db.get("SELECT * FROM users LIMIT 1", [], (err, row) => {
+                if (!row) {
+                    console.log("[SERVER] No users found. Creating default admin user (admin/admin).");
+                    db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', 'admin', 'admin']);
+                }
+            });
         });
-        db.run(`CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)`, (err) => {
-            if(err) console.error("Error creating playlists table:", err.message);
-        });
-        db.run(`CREATE TABLE IF NOT EXISTS playlist_sources (id INTEGER PRIMARY KEY AUTOINCREMENT, playlist_id INTEGER, type TEXT, content TEXT, identifier TEXT, addedAt TEXT, FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE)`, (err) => {
-            if(err) console.error("Error creating playlist_sources table:", err.message);
-        });
-
-        // Add a default admin user if no users exist
-        db.get("SELECT * FROM users LIMIT 1", [], (err, row) => {
-            if (err) {
-                console.error("[SERVER ERROR] Error checking for users:", err.message);
-                return;
-            }
-            if (!row) {
-                console.log("[SERVER] No users found. Creating default admin user (admin/admin).");
-                db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', 'admin', 'admin'], function(err) {
-                    if (err) {
-                        console.error("[SERVER ERROR] Error creating default admin user:", err.message);
-                    } else {
-                        console.log(`[SERVER] Default admin user created successfully.`);
-                    }
-                });
-            }
-        });
-    });
-  }
+    }
 });
 
-// --- API Routes ---
+// --- PROXY ROUTE ---
+app.get('/api/proxy', async (req, res) => {
+    const { url } = req.query;
 
+    if (!url || typeof url !== 'string') {
+        return res.status(400).send('URL is required');
+    }
+
+    console.log(`[PROXY] Streaming: ${url}`);
+
+    try {
+        const response = await axios({
+            method: 'get',
+            url: url,
+            responseType: 'stream',
+        });
+
+        // Pipe the video stream directly to the client response
+        response.data.pipe(res);
+
+    } catch (error) {
+        console.error(`[PROXY ERROR] Failed to fetch ${url}:`, error.message);
+        res.status(500).send('Failed to fetch the video stream');
+    }
+});
+
+
+// --- API Routes (Omitted for brevity, no changes here) ---
 // Auth
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
