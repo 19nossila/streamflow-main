@@ -48,7 +48,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-// --- ADVANCED PROXY ROUTE ---
+// --- FINAL PROXY ROUTE WITH DEEP LOGGING ---
 app.get('/api/proxy', async (req, res) => {
     const { url } = req.query;
 
@@ -57,44 +57,69 @@ app.get('/api/proxy', async (req, res) => {
     }
 
     try {
-        console.log(`[PROXY] Request for: ${url}`);
+        const requestHeaders = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Referer': new URL(url).origin // Add a referer header
+        };
         
-        // Forward the Range header from the client if it exists
-        const requestHeaders = {};
         if (req.headers.range) {
-            console.log(`[PROXY] Client sent a Range header: ${req.headers.range}`);
             requestHeaders.range = req.headers.range;
         }
+
+        console.log(`[PROXY] Requesting URL: ${url}`);
 
         const response = await axios({
             method: 'get',
             url: url,
             responseType: 'stream',
             headers: requestHeaders,
+            timeout: 15000 // 15 seconds
         });
 
-        // Get the headers from the source video server
         const sourceHeaders = response.headers;
-        console.log(`[PROXY] Source server responded with status ${response.status}`);
+        const statusCode = response.status;
+        console.log(`[PROXY] Source server responded with status ${statusCode}`);
 
-        // Write the headers from the source server to our response
-        res.writeHead(response.status, {
+        res.writeHead(statusCode, {
             'Content-Type': sourceHeaders['content-type'],
             'Content-Length': sourceHeaders['content-length'],
             'Content-Range': sourceHeaders['content-range'],
             'Accept-Ranges': sourceHeaders['accept-ranges'],
         });
 
-        // Pipe the video stream data to the client
         response.data.pipe(res);
 
     } catch (error) {
+        console.error("-----------------------------------------------------");
+        console.error(`[PROXY] CRITICAL FAILURE for URL: ${url}`)
         if (error.response) {
-            console.error(`[PROXY ERROR] Source server responded with ${error.response.status}`);
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            console.error("[PROXY] Status from Source:", error.response.status);
+            console.error("[PROXY] Headers from Source:", JSON.stringify(error.response.headers, null, 2));
+            // Try to log the data from the error response, it might contain a message
+            const errorData = await new Promise(resolve => {
+                let body = '';
+                const stream = error.response.data;
+                stream.on('data', chunk => body += chunk);
+                stream.on('end', () => resolve(body));
+                stream.on('error', () => resolve('Could not read error stream.'));
+            });
+            console.error("[PROXY] Data from Source:", errorData);
+
+        } else if (error.request) {
+            // The request was made but no response was received
+            console.error("[PROXY] No response received from source server.");
+            console.error("[PROXY] Error Request Details:", error.request);
         } else {
-            console.error(`[PROXY ERROR] Failed to fetch ${url}:`, error.message);
+            // Something happened in setting up the request that triggered an Error
+            console.error("[PROXY] Generic Error:", error.message);
         }
-        res.status(500).send('Failed to fetch the video stream');
+        console.error("-----------------------------------------------------");
+
+        if (!res.headersSent) {
+            res.status(500).send('A critical error occurred while trying to proxy the video stream.');
+        }
     }
 });
 
