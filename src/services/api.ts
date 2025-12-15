@@ -1,5 +1,8 @@
 import { User, StoredPlaylist, PlaylistSource } from '../types';
 
+// Use the environment variable for the production URL, but fall back to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 // Helper to perform fetch requests
 async function fetchApi(path: string, options: RequestInit = {}) {
   const defaultOptions: RequestInit = {
@@ -8,15 +11,21 @@ async function fetchApi(path: string, options: RequestInit = {}) {
     },
   };
 
-  const response = await fetch(`/api${path}`, { ...defaultOptions, ...options });
+  const url = `${API_BASE_URL}${path}`;
+  console.log(`[API] Requesting: ${url}`)
 
+  // Combine base url, path, and options
+  const response = await fetch(url, { ...defaultOptions, ...options });
+
+  // Check if the request was successful
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-    throw new Error(errorData.message || 'API request failed');
+    // Try to parse error message from the server, otherwise throw a generic error
+    const errorData = await response.json().catch(() => ({ message: `Request failed with status: ${response.status}` }));
+    throw new Error(errorData.message || errorData.error || 'An unknown API error occurred');
   }
   
-  // Return an empty object for DELETE requests, which have no body
-  if (options.method === 'DELETE') {
+  // For DELETE requests, a successful response might not have a body
+  if (response.status === 204) {
       return {};
   }
 
@@ -26,83 +35,66 @@ async function fetchApi(path: string, options: RequestInit = {}) {
 export const apiService = {
   // --- Auth ---
   login: (username: string, password: string): Promise<User> => {
-    return fetchApi('/auth/login', {
+    return fetchApi('/api/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     });
   },
 
-  logout: (): Promise<void> => {
-    // This is often a client-side only operation, but we can have a placeholder
-    return Promise.resolve();
-  },
-
   // --- Users ---
   getUsers: (): Promise<User[]> => {
-    return fetchApi('/users');
+    return fetchApi('/api/users');
   },
 
   addUser: (user: Omit<User, 'id'>): Promise<User> => {
-    return fetchApi('/users', {
+    return fetchApi('/api/users', {
       method: 'POST',
       body: JSON.stringify(user),
     });
   },
   
-  updateUserPassword: (userId: string, newPassword: string): Promise<void> => {
-    return fetchApi(`/users/${userId}/password`, {
+  updateUserPassword: (userId: number | string, newPassword: string): Promise<void> => {
+    return fetchApi(`/api/users/${userId}/password`, {
         method: 'PUT',
-        body: JSON.stringify({ password: newPassword }),
+        body: JSON.stringify({ newPassword }), // Server expects newPassword
     });
   },
 
-  deleteUser: (id: string): Promise<void> => {
-    return fetchApi(`/users/${id}`, {
+  deleteUser: (id: number | string): Promise<void> => {
+    return fetchApi(`/api/users/${id}`, {
       method: 'DELETE',
     });
   },
 
   // --- Playlists (Collections) ---
   getPlaylists: (): Promise<StoredPlaylist[]> => {
-    return fetchApi('/playlists');
+    return fetchApi('/api/playlists');
   },
 
   createPlaylist: (name: string): Promise<StoredPlaylist> => {
-    return fetchApi('/playlists', {
+    return fetchApi('/api/playlists', {
       method: 'POST',
       body: JSON.stringify({ name }),
     });
   },
 
-  deletePlaylist: (id: string): Promise<void> => {
-    return fetchApi(`/playlists/${id}`, {
+  deletePlaylist: (id: number | string): Promise<void> => {
+    return fetchApi(`/api/playlists/${id}`, {
       method: 'DELETE',
     });
   },
 
   // --- Sources within Playlists ---
-  addSourceToPlaylist: (playlistId: string, source: Omit<PlaylistSource, 'id' | 'addedAt'>): Promise<StoredPlaylist> => {
-    return fetchApi(`/playlists/${playlistId}/sources`, {
+  addSourceToPlaylist: (playlistId: number | string, source: Omit<PlaylistSource, 'id' | 'addedAt'>): Promise<PlaylistSource> => {
+    return fetchApi(`/api/playlists/${playlistId}/sources`, {
       method: 'POST',
       body: JSON.stringify(source),
     });
   },
 
-  removeSourceFromPlaylist: (playlistId: string, sourceId: string): Promise<void> => {
-    return fetchApi(`/playlists/${playlistId}/sources/${sourceId}`, {
+  removeSourceFromPlaylist: (playlistId: number | string, sourceId: number | string): Promise<void> => {
+    return fetchApi(`/api/playlists/${playlistId}/sources/${sourceId}`, {
       method: 'DELETE',
     });
   },
-    
-  // --- Sync / Backup ---
-  exportData: (): Promise<any> => {
-      return fetchApi('/sync/export');
-  },
-    
-  importData: (data: any): Promise<void> => {
-      return fetchApi('/sync/import', {
-          method: 'POST',
-          body: JSON.stringify(data),
-      });
-  }
 };

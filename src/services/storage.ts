@@ -1,180 +1,85 @@
 import { User, StoredPlaylist, PlaylistSource } from '../types';
+import { apiService } from './api';
 
-// Define keys for localStorage
-const USERS_KEY = 'streamflow_users';
-const PLAYLISTS_KEY = 'streamflow_playlists';
 const SESSION_KEY = 'streamflow_session';
-
-// Helper to get item from localStorage
-const getStore = <T>(key: string): T | null => {
-  try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : null;
-  } catch (e) {
-    console.error(`Failed to parse localStorage key "${key}"`, e);
-    return null;
-  }
-};
-
-// Helper to set item in localStorage
-const setStore = <T>(key: string, data: T) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) {
-    console.error(`Failed to set localStorage key "${key}"`, e);
-  }
-};
-
-// --- Initialize with default data if empty ---
-const initializeData = () => {
-    if (!getStore(USERS_KEY)) {
-        const defaultAdmin: User = {
-            id: 'user-001',
-            username: 'admin',
-            password: '123', // In a real app, this should be hashed
-            role: 'admin'
-        };
-        setStore<User[]>(USERS_KEY, [defaultAdmin]);
-    }
-    if (!getStore(PLAYLISTS_KEY)) {
-        setStore<StoredPlaylist[]>(PLAYLISTS_KEY, []);
-    }
-};
-
-// Call initialization
-initializeData();
 
 export const storageService = {
   // --- Auth ---
-  login: (username: string, password: string): User | null => {
-    const users = getStore<User[]>(USERS_KEY) || [];
-    const user = users.find(u => u.username === username && u.password === password);
-    if (user) {
-      setStore<User>(SESSION_KEY, user);
+  login: async (username: string, password: string): Promise<User | null> => {
+    try {
+      const user = await apiService.login(username, password);
+      if (user) {
+        // Store session info in localStorage for persistence across reloads
+        localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+      }
       return user;
+    } catch (error) {
+      console.error('Login failed:', error);
+      // On failure, ensure session is cleared
+      localStorage.removeItem(SESSION_KEY);
+      return null;
     }
-    return null;
   },
 
   logout: () => {
+    // No need to await an API call if it's just removing local state
     localStorage.removeItem(SESSION_KEY);
+    // If you had a server-side session invalidation, you'd call it here:
+    // return apiService.logout(); 
   },
 
   getCurrentUser: (): User | null => {
-    return getStore<User>(SESSION_KEY);
+    const session = localStorage.getItem(SESSION_KEY);
+    return session ? JSON.parse(session) : null;
   },
 
   // --- Users ---
-  getUsers: (): User[] => {
-    return getStore<User[]>(USERS_KEY) || [];
+  getUsers: (): Promise<User[]> => {
+    return apiService.getUsers();
   },
 
-  addUser: (user: Omit<User, 'id' | 'role'> & { role?: 'user' | 'admin', password?: string }): User => {
-      const users = getStore<User[]>(USERS_KEY) || [];
-      const newUser: User = {
-          id: `user-${Date.now()}`,
-          role: 'user',
-          ...user,
-          password: user.password || '1234' // Default password
-      };
-      setStore(USERS_KEY, [...users, newUser]);
-      return newUser;
+  addUser: (user: Omit<User, 'id'>): Promise<User> => {
+    return apiService.addUser(user);
   },
 
-  updateUserPassword: (userId: string, newPassword: string): boolean => {
-      const users = getStore<User[]>(USERS_KEY) || [];
-      const userIndex = users.findIndex(u => u.id === userId);
-      if (userIndex > -1) {
-          users[userIndex].password = newPassword;
-          setStore(USERS_KEY, users);
-          return true;
-      }
-      return false;
+  updateUserPassword: (userId: string | number, newPassword: string): Promise<void> => {
+    return apiService.updateUserPassword(userId, newPassword);
   },
 
-  deleteUser: (id: string): boolean => {
-    const users = getStore<User[]>(USERS_KEY) || [];
-    const newUsers = users.filter(u => u.id !== id);
-    if (users.length !== newUsers.length) {
-      setStore(USERS_KEY, newUsers);
-      return true;
-    }
-    return false;
+  deleteUser: (id: string | number): Promise<void> => {
+    return apiService.deleteUser(id);
   },
 
   // --- Playlists (Collections) ---
-  getPlaylists: (): StoredPlaylist[] => {
-    return getStore<StoredPlaylist[]>(PLAYLISTS_KEY) || [];
+  getPlaylists: (): Promise<StoredPlaylist[]> => {
+    return apiService.getPlaylists();
   },
 
-  createPlaylist: (name: string): StoredPlaylist => {
-    const playlists = getStore<StoredPlaylist[]>(PLAYLISTS_KEY) || [];
-    const newPlaylist: StoredPlaylist = {
-        id: `pl-${Date.now()}`,
-        name,
-        sources: []
-    };
-    setStore(PLAYLISTS_KEY, [...playlists, newPlaylist]);
-    return newPlaylist;
+  createPlaylist: (name: string): Promise<StoredPlaylist> => {
+    return apiService.createPlaylist(name);
   },
 
-  deletePlaylist: (id: string): boolean => {
-    const playlists = getStore<StoredPlaylist[]>(PLAYLISTS_KEY) || [];
-    const newPlaylists = playlists.filter(p => p.id !== id);
-     if (playlists.length !== newPlaylists.length) {
-      setStore(PLAYLISTS_KEY, newPlaylists);
-      return true;
-    }
-    return false;
+  deletePlaylist: (id: string | number): Promise<void> => {
+    return apiService.deletePlaylist(id);
   },
 
   // --- Sources within Playlists ---
-  addSourceToPlaylist: (playlistId: string, source: Omit<PlaylistSource, 'id' | 'addedAt'>): StoredPlaylist | null => {
-    const playlists = getStore<StoredPlaylist[]>(PLAYLISTS_KEY) || [];
-    const plIndex = playlists.findIndex(p => p.id === playlistId);
-    if (plIndex > -1) {
-        const newSource: PlaylistSource = {
-            ...source,
-            id: `src-${Date.now()}`,
-            addedAt: new Date().toISOString()
-        };
-        playlists[plIndex].sources.push(newSource);
-        setStore(PLAYLISTS_KEY, playlists);
-        return playlists[plIndex];
-    }
-    return null;
+  addSourceToPlaylist: (playlistId: string | number, source: Omit<PlaylistSource, 'id' | 'addedAt'>): Promise<PlaylistSource> => {
+    return apiService.addSourceToPlaylist(playlistId, source);
   },
 
-  removeSourceFromPlaylist: (playlistId: string, sourceId: string): boolean => {
-    const playlists = getStore<StoredPlaylist[]>(PLAYLISTS_KEY) || [];
-    const plIndex = playlists.findIndex(p => p.id === playlistId);
-     if (plIndex > -1) {
-        const sourceCount = playlists[plIndex].sources.length;
-        playlists[plIndex].sources = playlists[plIndex].sources.filter(s => s.id !== sourceId);
-        if (playlists[plIndex].sources.length !== sourceCount) {
-             setStore(PLAYLISTS_KEY, playlists);
-             return true;
-        }
-    }
-    return false;
+  removeSourceFromPlaylist: (playlistId: string | number, sourceId: string | number): Promise<void> => {
+    return apiService.removeSourceFromPlaylist(playlistId, sourceId);
   },
-  
-  // --- Sync / Backup ---
-  exportData: (): object => {
-    return {
-      users: getStore(USERS_KEY),
-      playlists: getStore(PLAYLISTS_KEY)
-    };
+
+  // --- Sync / Backup (These would need server-side implementation if you want true sync) ---
+  exportData: (): Promise<string> => {
+    // This is a placeholder. A real implementation would fetch from a server endpoint.
+    return Promise.reject(new Error('Export via server not implemented'));
   },
-  
-  importData: (jsonString: string): boolean => {
-    try {
-      const data = JSON.parse(jsonString);
-      if (data.users) setStore(USERS_KEY, data.users);
-      if (data.playlists) setStore(PLAYLISTS_KEY, data.playlists);
-      return true;
-    } catch(e) {
-      return false;
-    }
+
+  importData: (jsonString: string): Promise<void> => {
+    // This is a placeholder. A real implementation would post to a server endpoint.
+    return Promise.reject(new Error('Import via server not implemented'));
   }
 };

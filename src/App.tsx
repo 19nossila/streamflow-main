@@ -19,17 +19,23 @@ const App: React.FC = () => {
   const [playlistData, setPlaylistData] = useState<PlaylistData | null>(null);
   const [currentChannel, setCurrentChannel] = useState<Channel | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  
+  // Global Loading State
+  const [loading, setLoading] = useState(true); // Start true to check for session
 
+  // Check for existing session on initial load
   useEffect(() => {
     const user = storageService.getCurrentUser();
     if (user) {
       handleLoginSuccess(user);
+    } else {
+      setLoading(false); // No user found, stop loading and show login
     }
   }, []);
 
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
+    setLoading(false); // Once logged in, stop loading
     if (user.role === 'admin') {
       setView('dashboard');
     } else {
@@ -45,17 +51,17 @@ const App: React.FC = () => {
     setView('login');
   };
 
-  // Called when loading a specific Playlist Collection (e.g. "Live TV")
-  // It merges ALL sources inside that collection
+  // Loads a single playlist collection into the player
   const handleLoadPlaylist = useCallback((storedPlaylist: StoredPlaylist) => {
     setLoading(true);
+    // The parsing logic is client-side, a small timeout improves UX
     setTimeout(() => {
       try {
         let mergedChannels: Channel[] = [];
         const mergedGroups = new Set<string>();
         
         if (storedPlaylist.sources.length === 0) {
-            alert("This playlist has no sources/links yet.");
+            alert("This playlist has no M3U sources yet.");
             setLoading(false);
             return;
         }
@@ -71,22 +77,18 @@ const App: React.FC = () => {
         });
 
         if (mergedChannels.length === 0) {
-             alert("No playable channels found in the sources.");
+             alert("No playable channels found in the playlist sources.");
              setLoading(false);
              return;
         }
 
-        setPlaylistData({
-            channels: mergedChannels,
-            groups: Array.from(mergedGroups).sort()
-        });
-
+        setPlaylistData({ channels: mergedChannels, groups: Array.from(mergedGroups).sort() });
         if (mergedChannels.length > 0) {
           setCurrentChannel(mergedChannels[0]);
         }
         setView('player');
       } catch (e) {
-        console.error("General parsing error", e);
+        console.error("Error processing playlist:", e);
         alert("Failed to load playlist.");
       } finally {
         setLoading(false);
@@ -94,49 +96,41 @@ const App: React.FC = () => {
     }, 100);
   }, []);
 
-  // Merges EVERY source from EVERY playlist collection
-  const handleLoadAllPlaylists = useCallback(() => {
+  // Fetches ALL playlists from the server and merges them
+  const handleLoadAllPlaylists = useCallback(async () => {
     setLoading(true);
-    setTimeout(() => {
-        try {
-            const allPlaylists = storageService.getPlaylists();
-            let mergedChannels: Channel[] = [];
-            const mergedGroups = new Set<string>();
+    try {
+        const allPlaylists = await storageService.getPlaylists(); // Async call
+        let mergedChannels: Channel[] = [];
+        const mergedGroups = new Set<string>();
 
-            // Loop through every Playlist Collection
-            allPlaylists.forEach(pl => {
-                // Loop through every source in that collection
-                pl.sources.forEach(source => {
-                    try {
-                        const data = parseM3U(source.content);
-                        mergedChannels = [...mergedChannels, ...data.channels];
-                        data.groups.forEach(g => mergedGroups.add(g));
-                    } catch (e) {
-                        console.warn(`Failed to parse source: ${source.identifier}`);
-                    }
-                });
+        allPlaylists.forEach(pl => {
+            pl.sources.forEach(source => {
+                try {
+                    const data = parseM3U(source.content);
+                    mergedChannels = [...mergedChannels, ...data.channels];
+                    data.groups.forEach(g => mergedGroups.add(g));
+                } catch (e) {
+                    console.warn(`Could not parse source ${source.identifier}:`, e);
+                }
             });
+        });
 
-            if (mergedChannels.length === 0) {
-                alert("No channels found in storage.");
-                setLoading(false);
-                return;
-            }
-
-            setPlaylistData({
-                channels: mergedChannels,
-                groups: Array.from(mergedGroups).sort()
-            });
-            setCurrentChannel(mergedChannels[0]);
-            setView('player');
-
-        } catch (e) {
-            console.error("Merge error", e);
-            alert("Error loading merged playlists.");
-        } finally {
-            setLoading(false);
+        if (mergedChannels.length === 0) {
+            alert("No channels found across all playlists.");
+            return;
         }
-    }, 100);
+
+        setPlaylistData({ channels: mergedChannels, groups: Array.from(mergedGroups).sort() });
+        setCurrentChannel(mergedChannels[0]);
+        setView('player');
+
+    } catch (e: any) {
+        console.error("Failed to load all playlists:", e);
+        alert(`Error loading all playlists: ${e.message}`);
+    } finally {
+        setLoading(false);
+    }
   }, []);
 
   const handleChannelSelect = (channel: Channel) => {
@@ -145,11 +139,7 @@ const App: React.FC = () => {
   };
 
   const handleBackToMenu = () => {
-      if (currentUser?.role === 'admin') {
-          setView('dashboard');
-      } else {
-          setView('selector');
-      }
+      setView(currentUser?.role === 'admin' ? 'dashboard' : 'selector');
       setPlaylistData(null);
       setCurrentChannel(null);
   };
@@ -160,7 +150,7 @@ const App: React.FC = () => {
       return (
           <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white">
               <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p>Loading Content...</p>
+              <p>Loading Application...</p>
           </div>
       );
   }
@@ -170,18 +160,12 @@ const App: React.FC = () => {
   }
 
   if (view === 'dashboard' && currentUser.role === 'admin') {
-    return (
-        <AdminDashboard 
-            onLogout={handleLogout} 
-            onPreview={handleLoadPlaylist} 
-        />
-    );
+    return <AdminDashboard onLogout={handleLogout} onPreview={handleLoadPlaylist} />;
   }
 
   if (view === 'selector') {
       return (
           <PlaylistSelector 
-            playlists={storageService.getPlaylists()} 
             onSelect={handleLoadPlaylist}
             onSelectAll={handleLoadAllPlaylists}
             onLogout={handleLogout}
@@ -190,82 +174,45 @@ const App: React.FC = () => {
       );
   }
 
-  // --- PLAYER VIEW ---
   if (view === 'player' && playlistData) {
     return (
-        <div className="flex flex-col h-screen bg-black overflow-hidden relative">
-        {/* Mobile Header */}
+      <div className="flex flex-col h-screen bg-black overflow-hidden relative">
         <div className="md:hidden bg-gray-900 p-4 border-b border-gray-700 flex justify-between items-center z-50">
-            <div className="font-bold text-red-500 flex items-center gap-2">
-                <i className="fas fa-play-circle"></i> StreamFlow
-            </div>
-            <button 
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-white p-2"
-            >
-                <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-            </button>
+          <div className="font-bold text-red-500 flex items-center gap-2"><i className="fas fa-play-circle"></i> StreamFlow</div>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white p-2">
+              <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+          </button>
         </div>
-
         <div className="flex flex-1 overflow-hidden relative">
-            {/* Sidebar */}
-            <div className={`
-                absolute md:static inset-0 z-40 transform transition-transform duration-300 ease-in-out
-                ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
-                md:translate-x-0 flex
-            `}>
+          <div className={`absolute md:static inset-0 z-40 transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 flex`}>
             <Sidebar 
                 channels={playlistData.channels} 
                 currentChannel={currentChannel}
                 onSelectChannel={handleChannelSelect}
                 groups={playlistData.groups}
             />
-            </div>
-
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col w-full h-full relative">
-            
-            {/* Top Bar */}
+          </div>
+          <div className="flex-1 flex flex-col w-full h-full relative">
             <div className="h-14 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between px-6 shrink-0">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    {currentChannel?.logo && (
-                        <img src={currentChannel.logo} className="h-8 w-8 object-contain rounded" alt="" />
-                    )}
-                    <h2 className="text-lg font-semibold truncate text-white">{currentChannel?.name || 'Select a Channel'}</h2>
-                </div>
-                <button 
-                    onClick={handleBackToMenu}
-                    className="text-sm text-gray-400 hover:text-white flex items-center gap-2 px-3 py-1 rounded hover:bg-gray-800 transition-colors"
-                >
-                    <i className="fas fa-arrow-left"></i>
-                    <span className="hidden sm:inline">Back to Menu</span>
-                </button>
+              <div className="flex items-center gap-3 overflow-hidden">
+                {currentChannel?.logo && <img src={currentChannel.logo} className="h-8 w-8 object-contain rounded" alt="" />}
+                <h2 className="text-lg font-semibold truncate text-white">{currentChannel?.name || 'Select a Channel'}</h2>
+              </div>
+              <button onClick={handleBackToMenu} className="text-sm text-gray-400 hover:text-white flex items-center gap-2 px-3 py-1 rounded hover:bg-gray-800 transition-colors">
+                <i className="fas fa-arrow-left"></i>
+                <span className="hidden sm:inline">Back to Menu</span>
+              </button>
             </div>
-
-            {/* Player Wrapper */}
             <div className="flex-1 bg-black relative">
-                {currentChannel ? (
-                <VideoPlayer 
-                    url={currentChannel.url} 
-                    poster={currentChannel.logo}
-                />
-                ) : (
-                    <div className="h-full flex items-center justify-center text-gray-500">
-                        <div className="text-center">
-                            <i className="fas fa-tv text-6xl mb-4 opacity-50"></i>
-                            <p>Select a channel to start watching</p>
-                        </div>
-                    </div>
-                )}
+              {currentChannel ? <VideoPlayer url={currentChannel.url} poster={currentChannel.logo} /> : <div className="h-full flex items-center justify-center text-gray-500"><div className="text-center"><i className="fas fa-tv text-6xl mb-4 opacity-50"></i><p>Select a channel to start watching</p></div></div>}
             </div>
-            </div>
+          </div>
         </div>
-        </div>
+      </div>
     );
   }
 
-  // Fallback
-  return <div className="text-white p-10">Something went wrong. Reload.</div>;
+  return <div className="text-white p-10">An unexpected error occurred. Please reload.</div>;
 };
 
 export default App;

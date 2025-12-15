@@ -1,22 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StoredPlaylist } from '../types';
+import { storageService } from '../services/storage';
 
 interface PlaylistSelectorProps {
-  playlists: StoredPlaylist[];
   onSelect: (playlist: StoredPlaylist) => void;
   onSelectAll: () => void;
   onLogout: () => void;
   isAdmin: boolean;
 }
 
-const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ playlists, onSelect, onSelectAll, onLogout, isAdmin }) => {
+const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ onSelect, onSelectAll, onLogout, isAdmin }) => {
+  const [playlists, setPlaylists] = useState<StoredPlaylist[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      try {
+        setLoading(true);
+        const fetchedPlaylists = await storageService.getPlaylists();
+        setPlaylists(fetchedPlaylists);
+      } catch (err: any) {
+        console.error("Failed to fetch playlists:", err);
+        setError(err.message || 'Could not load playlists. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlaylists();
+  }, []);
 
   const Header = () => (
     <div className="flex justify-between items-center p-4 bg-gray-900 border-b border-gray-700">
         <h1 className="text-xl font-bold text-red-500 flex items-center gap-2"><i className="fas fa-play-circle"></i> StreamFlow</h1>
         <div className="flex items-center gap-4">
             {isAdmin && (
-                <button onClick={() => { alert("Admin dashboard not implemented in this component yet.") }} className="text-gray-400 hover:text-white transition-colors">
+                <button onClick={() => alert("Admin dashboard functionality should be handled in the AdminDashboard component.")} className="text-gray-400 hover:text-white transition-colors">
                     <i className="fas fa-cog"></i>
                 </button>
             )}
@@ -26,6 +46,35 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ playlists, onSelect
         </div>
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+                <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p>Loading Playlists from Server...</p>
+            </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+        <div className="min-h-screen bg-gray-900 flex flex-col">
+            <Header />
+            <div className="flex-1 flex items-center justify-center p-4">
+                <div className="bg-gray-800 p-8 rounded-lg shadow-xl text-center border border-red-800/50">
+                    <i className="fas fa-exclamation-triangle text-red-500 text-3xl mb-4"></i>
+                    <h2 className="text-xl font-bold mb-2">Failed to Load Content</h2>
+                    <p className="text-gray-400">{error}</p>
+                </div>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -37,7 +86,7 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ playlists, onSelect
                  {playlists.length === 0 ? (
                     <div className="text-center bg-gray-800 p-8 rounded-lg border border-gray-700">
                         <i className="fas fa-list-ol text-4xl text-gray-500 mb-4"></i>
-                        <h3 className="text-xl font-semibold">No Playlists Found</h3>
+                        <h3 className="text-xl font-semibold">No Playlists Found on Server</h3>
                         <p className="text-gray-400 mt-2">Admins can create new playlists in the dashboard.</p>
                     </div>
                 ) : (
