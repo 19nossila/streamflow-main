@@ -1,200 +1,200 @@
-2025-12-15T22:04:11.272615278Z ==> Deploying...
-2025-12-15T22:04:30.623543094Z 
-2025-12-15T22:04:30.623561774Z > streamflow-iptv@0.0.0 start
-2025-12-15T22:04:30.623565824Z > node server.js
-2025-12-15T22:04:30.623568384Z 
-2025-12-15T22:04:33.223062553Z [SERVER] Not on Render or disk not found. Using local database at: /opt/render/project/src/database.db
-2025-12-15T22:04:33.310088487Z [SERVER] Server is running on http://localhost:10000
-2025-12-15T22:04:33.311558786Z [SERVER] Connected to the SQLite database.
-2025-12-15T22:04:42.757471908Z ==> Your service is live 🎉
-2025-12-15T22:04:42.841478892Z ==> 
-2025-12-15T22:04:42.925915006Z ==> ///////////////////////////////////////////////////////////
-2025-12-15T22:04:43.01727521Z ==> 
-2025-12-15T22:04:43.099686494Z ==> Available at your primary URL https://streamflow-backend-0dns.onrender.com
-2025-12-15T22:04:43.185130838Z ==> 
-2025-12-15T22:04:43.271959672Z ==> ///////////////////////////////////////////////////////////
-2025-12-15T22:06:46.028465159Z [PROXY] Streaming: http://zplaypro.lat:2095/movie/lhv0gwmkw/60279zplayer/364388.mp4
-2025-12-15T22:06:46.321505008Z [PROXY ERROR] Failed to fetch http://zplaypro.lat:2095/movie/lhv0gwmkw/60279zplayer/364388.mp4: Request failed with status code 521
-2025-12-15T22:09:36.656769544Z ==> Detected service running on port 10000
-2025-12-15T22:09:36.836323367Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
-2025-12-15T22:13:30.273398316Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
-2025-12-15T22:13:30.33985443Z ==> Deploying...
-2025-12-15T22:13:46.674262236Z ==> Running 'npm run start'
-2025-12-15T22:13:47.76586279Z 
-2025-12-15T22:13:47.765883841Z > streamflow-iptv@0.0.0 start
-2025-12-15T22:13:47.765887071Z > node server.js
-2025-12-15T22:13:47.765888771Z 
-2025-12-15T22:13:50.172989813Z [SERVER] Not on Render or disk not found. Using local database at: /opt/render/project/src/database.db
-2025-12-15T22:13:50.26385706Z [SERVER] Server is running on http://localhost:10000
-2025-12-15T22:13:50.365923054Z [SERVER] Connected to the SQLite database.
-2025-12-15T22:13:51.317930305Z ==> Your service is live 🎉
-2025-12-15T22:13:51.413006069Z ==> 
-2025-12-15T22:13:51.509507162Z ==> ///////////////////////////////////////////////////////////
-2025-12-15T22:13:51.593159556Z ==> 
-2025-12-15T22:13:51.701425689Z ==> Available at your primary URL https://streamflow-backend-0dns.onrender.com
-2025-12-15T22:13:51.795607782Z ==> 
-2025-12-15T22:13:51.895276805Z ==> ///////////////////////////////////////////////////////////
-2025-12-15T22:18:05.568163657Z [PROXY] Request for: http://zplaypro.lat:2095/movie/lhv0gwmkw/60279zplayer/364388.mp4
-2025-12-15T22:18:05.568207458Z [PROXY] Client sent a Range header: bytes=0-
-2025-12-15T22:18:05.923017346Z [PROXY ERROR] Source server responded with 521
-2025-12-15T22:18:53.887703348Z ==> Detected service running on port 10000
-2025-12-15T22:18:54.235386893Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
-2025-12-15T22:20:09.32418806Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
-2025-12-15T22:20:09.389004845Z ==> Deploying...
-2025-12-15T22:20:40.668267864Z ==> Running 'npm run start'
-2025-12-15T22:20:41.75790441Z 
-2025-12-15T22:20:41.757947081Z > streamflow-iptv@0.0.0 start
-2025-12-15T22:20:41.757952171Z > node server.js
-2025-12-15T22:20:41.757954381Z 
-2025-12-15T22:20:44.064184683Z [SERVER] Not on Render or disk not found. Using local database at: /opt/render/project/src/database.db
-2025-12-15T22:20:44.067374223Z [SERVER] Server is running on http://localhost:10000
-2025-12-15T22:20:44.264201146Z [SERVER] Connected to the SQLite database.
-2025-12-15T22:20:50.728717606Z ==> Your service is live 🎉
-2025-12-15T22:20:51.229883191Z ==> 
-2025-12-15T22:20:51.322268975Z ==> ///////////////////////////////////////////////////////////
-2025-12-15T22:20:51.408408999Z ==> 
-2025-12-15T22:20:51.489622483Z ==> Available at your primary URL https://streamflow-backend-0dns.onrender.com
-2025-12-15T22:20:51.578682447Z ==> 
-2025-12-15T22:20:51.67038189Z ==> ///////////////////////////////////////////////////////////
-2025-12-15T22:22:12.280563037Z [PROXY] Requesting URL: http://zplaypro.lat:2095/movie/lhv0gwmkw/60279zplayer/364388.mp4
-2025-12-15T22:22:12.664158555Z -----------------------------------------------------
-2025-12-15T22:22:12.664174416Z [PROXY] CRITICAL FAILURE for URL: http://zplaypro.lat:2095/movie/lhv0gwmkw/60279zplayer/364388.mp4
-2025-12-15T22:22:12.664264758Z [PROXY] Status from Source: 521
-2025-12-15T22:22:12.66432492Z [PROXY] Headers from Source: {
-2025-12-15T22:22:12.66433177Z   "date": "Mon, 15 Dec 2025 22:22:12 GMT",
-2025-12-15T22:22:12.6643347Z   "content-type": "text/html; charset=UTF-8",
-2025-12-15T22:22:12.664337671Z   "content-length": "6974",
-2025-12-15T22:22:12.664340431Z   "connection": "keep-alive",
-2025-12-15T22:22:12.664343811Z   "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
-2025-12-15T22:22:12.664347421Z   "expires": "Thu, 01 Jan 1970 00:00:01 GMT",
-2025-12-15T22:22:12.664350081Z   "referrer-policy": "same-origin",
-2025-12-15T22:22:12.664352811Z   "x-frame-options": "SAMEORIGIN",
-2025-12-15T22:22:12.664355541Z   "server": "cloudflare",
-2025-12-15T22:22:12.664358261Z   "cf-ray": "9ae956a01f47c562-IAD",
-2025-12-15T22:22:12.664361081Z   "alt-svc": "h3=\":443\"; ma=86400"
-2025-12-15T22:22:12.664363831Z }
-2025-12-15T22:22:12.665477003Z [PROXY] Data from Source: <!DOCTYPE html>
-2025-12-15T22:22:12.665486053Z <!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->
-2025-12-15T22:22:12.665488983Z <!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en-US"> <![endif]-->
-2025-12-15T22:22:12.665491773Z <!--[if IE 8]>    <html class="no-js ie8 oldie" lang="en-US"> <![endif]-->
-2025-12-15T22:22:12.665494493Z <!--[if gt IE 8]><!--> <html class="no-js" lang="en-US"> <!--<![endif]-->
-2025-12-15T22:22:12.665497203Z <head>
-2025-12-15T22:22:12.665499863Z 
-2025-12-15T22:22:12.665503633Z <title>zplaypro.lat | 521: Web server is down</title>
-2025-12-15T22:22:12.665506884Z <meta charset="UTF-8" />
-2025-12-15T22:22:12.665509644Z <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-2025-12-15T22:22:12.665512464Z <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-2025-12-15T22:22:12.665515254Z <meta name="robots" content="noindex, nofollow" />
-2025-12-15T22:22:12.665518014Z <meta name="viewport" content="width=device-width,initial-scale=1" />
-2025-12-15T22:22:12.665520694Z <link rel="stylesheet" id="cf_styles-css" href="/cdn-cgi/styles/main.css" />
-2025-12-15T22:22:12.665523394Z </head>
-2025-12-15T22:22:12.665526144Z <body>
-2025-12-15T22:22:12.665528854Z <div id="cf-wrapper">
-2025-12-15T22:22:12.665531574Z     <div id="cf-error-details" class="p-0">
-2025-12-15T22:22:12.665568695Z         <header class="mx-auto pt-10 lg:pt-6 lg:px-8 w-240 lg:w-full mb-8">
-2025-12-15T22:22:12.665572905Z             <h1 class="inline-block sm:block sm:mb-2 font-light text-60 lg:text-4xl text-black-dark leading-tight mr-2">
-2025-12-15T22:22:12.665575746Z                 <span class="inline-block">Web server is down</span>
-2025-12-15T22:22:12.665578506Z                 <span class="code-label">Error code 521</span>
-2025-12-15T22:22:12.665590506Z             </h1>
-2025-12-15T22:22:12.665592336Z             <div>
-2025-12-15T22:22:12.665595776Z                 Visit <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_521&utm_campaign=zplaypro.lat" target="_blank" rel="noopener noreferrer">cloudflare.com</a> for more information.
-2025-12-15T22:22:12.665597506Z             </div>
-2025-12-15T22:22:12.665599276Z             <div class="mt-3">2025-12-15 22:22:12 UTC</div>
-2025-12-15T22:22:12.665601006Z         </header>
-2025-12-15T22:22:12.665602666Z         <div class="my-8 bg-gradient-gray">
-2025-12-15T22:22:12.665604316Z             <div class="w-240 lg:w-full mx-auto">
-2025-12-15T22:22:12.665606046Z                 <div class="clearfix md:px-8">
-2025-12-15T22:22:12.665609167Z                     <div id="cf-browser-status" class=" relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
-2025-12-15T22:22:12.665611676Z   <div class="relative mb-10 md:m-0">
-2025-12-15T22:22:12.665613347Z     
-2025-12-15T22:22:12.665615717Z     <span class="cf-icon-browser block md:hidden h-20 bg-center bg-no-repeat"></span>
-2025-12-15T22:22:12.665617517Z     <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
-2025-12-15T22:22:12.665619197Z     
-2025-12-15T22:22:12.665620857Z   </div>
-2025-12-15T22:22:12.665622577Z   <span class="md:block w-full truncate">You</span>
-2025-12-15T22:22:12.665624307Z   <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
-2025-12-15T22:22:12.665626087Z   
-2025-12-15T22:22:12.665627837Z     Browser
-2025-12-15T22:22:12.665629547Z   
-2025-12-15T22:22:12.665631277Z   </h3>
-2025-12-15T22:22:12.665632947Z   
-2025-12-15T22:22:12.665634677Z   <span class="leading-1.3 text-2xl text-green-success">Working</span>
-2025-12-15T22:22:12.665636357Z   
-2025-12-15T22:22:12.665638017Z </div>
-2025-12-15T22:22:12.665639837Z                     <div id="cf-cloudflare-status" class=" relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
-2025-12-15T22:22:12.665641527Z   <div class="relative mb-10 md:m-0">
-2025-12-15T22:22:12.665644457Z     <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_521&#38;utm_campaign=zplaypro.lat" target="_blank" rel="noopener noreferrer">
-2025-12-15T22:22:12.665646208Z     <span class="cf-icon-cloud block md:hidden h-20 bg-center bg-no-repeat"></span>
-2025-12-15T22:22:12.665647948Z     <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
-2025-12-15T22:22:12.665649648Z     </a>
-2025-12-15T22:22:12.665651318Z   </div>
-2025-12-15T22:22:12.665652968Z   <span class="md:block w-full truncate">Ashburn</span>
-2025-12-15T22:22:12.665654648Z   <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
-2025-12-15T22:22:12.665656348Z   <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_521&utm_campaign=zplaypro.lat" target="_blank" rel="noopener noreferrer">
-2025-12-15T22:22:12.665658108Z     Cloudflare
-2025-12-15T22:22:12.665659838Z   </a>
-2025-12-15T22:22:12.665661548Z   </h3>
-2025-12-15T22:22:12.665663288Z   
-2025-12-15T22:22:12.665664968Z   <span class="leading-1.3 text-2xl text-green-success">Working</span>
-2025-12-15T22:22:12.665666618Z   
-2025-12-15T22:22:12.665668288Z </div>
-2025-12-15T22:22:12.665670008Z                     <div id="cf-host-status" class="cf-error-source relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
-2025-12-15T22:22:12.665675918Z   <div class="relative mb-10 md:m-0">
-2025-12-15T22:22:12.665677768Z     
-2025-12-15T22:22:12.665679498Z     <span class="cf-icon-server block md:hidden h-20 bg-center bg-no-repeat"></span>
-2025-12-15T22:22:12.665681238Z     <span class="cf-icon-error w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
-2025-12-15T22:22:12.665682909Z     
-2025-12-15T22:22:12.665684538Z   </div>
-2025-12-15T22:22:12.665686199Z   <span class="md:block w-full truncate">zplaypro.lat</span>
-2025-12-15T22:22:12.665687959Z   <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
-2025-12-15T22:22:12.665689639Z   
-2025-12-15T22:22:12.665693529Z     Host
-2025-12-15T22:22:12.665695349Z   
-2025-12-15T22:22:12.665697059Z   </h3>
-2025-12-15T22:22:12.665698759Z   
-2025-12-15T22:22:12.665700479Z   <span class="leading-1.3 text-2xl text-red-error">Error</span>
-2025-12-15T22:22:12.665702149Z   
-2025-12-15T22:22:12.665703849Z </div>
-2025-12-15T22:22:12.665705579Z                 </div>
-2025-12-15T22:22:12.665707269Z             </div>
-2025-12-15T22:22:12.665708929Z         </div>
-2025-12-15T22:22:12.665710549Z 
-2025-12-15T22:22:12.665712229Z         <div class="w-240 lg:w-full mx-auto mb-8 lg:px-8">
-2025-12-15T22:22:12.665713979Z             <div class="clearfix">
-2025-12-15T22:22:12.665715679Z                 <div class="w-1/2 md:w-full float-left pr-6 md:pb-10 md:pr-0 leading-relaxed">
-2025-12-15T22:22:12.66571741Z                     <h2 class="text-3xl font-normal leading-1.3 mb-4">What happened?</h2>
-2025-12-15T22:22:12.665719219Z                     <p>The web server is not returning a connection. As a result, the web page is not displaying.</p>
-2025-12-15T22:22:12.66572095Z                 </div>
-2025-12-15T22:22:12.6657227Z                 <div class="w-1/2 md:w-full float-left leading-relaxed">
-2025-12-15T22:22:12.66572437Z                     <h2 class="text-3xl font-normal leading-1.3 mb-4">What can I do?</h2>
-2025-12-15T22:22:12.66572605Z                     
-2025-12-15T22:22:12.66572849Z                 <h3 class="text-15 font-semibold mb-2">If you are a visitor of this website:</h3>
-2025-12-15T22:22:12.6657303Z                 <p class="mb-6">Please try again in a few minutes.</p>
-2025-12-15T22:22:12.66573187Z 
-2025-12-15T22:22:12.66573367Z                 <h3 class="text-15 font-semibold mb-2">If you are the owner of this website:</h3>
-2025-12-15T22:22:12.66573687Z                 <p><span>Contact your hosting provider letting them know your web server is not responding.</span> <a rel="noopener noreferrer" href="https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-521/">Additional troubleshooting information</a>.</p>
-2025-12-15T22:22:12.6657386Z                 </div>
-2025-12-15T22:22:12.66574027Z             </div>
-2025-12-15T22:22:12.66574193Z         </div>
-2025-12-15T22:22:12.66574348Z 
-2025-12-15T22:22:12.66574667Z         <div class="cf-error-footer cf-wrapper w-240 lg:w-full py-10 sm:py-4 sm:px-8 mx-auto text-center sm:text-left border-solid border-0 border-t border-gray-300">
-2025-12-15T22:22:12.66574839Z     <p class="text-13">
-2025-12-15T22:22:12.66575062Z       <span class="cf-footer-item sm:block sm:mb-1">Cloudflare Ray ID: <strong class="font-semibold">9ae956a01f47c562</strong></span>
-2025-12-15T22:22:12.6657523Z       <span class="cf-footer-separator sm:hidden">&bull;</span>
-2025-12-15T22:22:12.665754051Z       <span id="cf-footer-item-ip" class="cf-footer-item hidden sm:block sm:mb-1">
-2025-12-15T22:22:12.665758501Z         Your IP:
-2025-12-15T22:22:12.665760241Z         <button type="button" id="cf-footer-ip-reveal" class="cf-footer-ip-reveal-btn">Click to reveal</button>
-2025-12-15T22:22:12.665761971Z         <span class="hidden" id="cf-footer-ip">74.220.49.253</span>
-2025-12-15T22:22:12.665763631Z         <span class="cf-footer-separator sm:hidden">&bull;</span>
-2025-12-15T22:22:12.665765321Z       </span>
-2025-12-15T22:22:12.665768531Z       <span class="cf-footer-item sm:block sm:mb-1"><span>Performance &amp; security by</span> <a rel="noopener noreferrer" href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_521&#38;utm_campaign=zplaypro.lat" id="brand_link" target="_blank">Cloudflare</a></span>
-2025-12-15T22:22:12.665770291Z       
-2025-12-15T22:22:12.665771991Z     </p>
-2025-12-15T22:22:12.665775511Z     <script>(function(){function d(){var b=a.getElementById("cf-footer-item-ip"),c=a.getElementById("cf-footer-ip-reveal");b&&"classList"in b&&(b.classList.remove("hidden"),c.addEventListener("click",function(){c.classList.add("hidden");a.getElementById("cf-footer-ip").classList.remove("hidden")}))}var a=document;document.addEventListener&&a.addEventListener("DOMContentLoaded",d)})();</script>
-2025-12-15T22:22:12.665777351Z   </div><!-- /.error-footer -->
-2025-12-15T22:22:12.665778921Z 
-2025-12-15T22:22:12.665780581Z     </div>
-2025-12-15T22:22:12.665782321Z </div>
-2025-12-15T22:22:12.665784061Z </body>
-2025-12-15T22:22:12.665785792Z </html>
-2025-12-15T22:22:12.665790752Z -----------------------------------------------------
+2025-12-15T22:45:15.635447374Z     agent: undefined,
+2025-12-15T22:45:15.635450224Z     nativeProtocols: { 'http:': [Object], 'https:': [Object] },
+2025-12-15T22:45:15.635453144Z     pathname: '/media/disk4/IMDb%20Top%20250%20Movies/12%20Years%20a%20Slave%20(2013)%20%5b1080p%5d/12.Years.a.Slave.2013.1080p.BluRay.x264.YIFY.mp4'
+2025-12-15T22:45:15.635454915Z   },
+2025-12-15T22:45:15.635456605Z   _ended: true,
+2025-12-15T22:45:15.635458325Z   _ending: true,
+2025-12-15T22:45:15.635459995Z   _redirectCount: 0,
+2025-12-15T22:45:15.635461675Z   _redirects: [],
+2025-12-15T22:45:15.635463385Z   _requestBodyLength: 0,
+2025-12-15T22:45:15.635465025Z   _requestBodyBuffers: [],
+2025-12-15T22:45:15.635466715Z   _eventsCount: 3,
+2025-12-15T22:45:15.635468375Z   _onNativeResponse: [Function (anonymous)],
+2025-12-15T22:45:15.635470025Z   _currentRequest: <ref *2> ClientRequest {
+2025-12-15T22:45:15.635471815Z     _events: [Object: null prototype] {
+2025-12-15T22:45:15.635473465Z       response: [Function],
+2025-12-15T22:45:15.635475125Z       error: [Function: noop]
+2025-12-15T22:45:15.635476775Z     },
+2025-12-15T22:45:15.635478425Z     _eventsCount: 2,
+2025-12-15T22:45:15.635480055Z     _maxListeners: undefined,
+2025-12-15T22:45:15.635481705Z     outputData: [],
+2025-12-15T22:45:15.635483375Z     outputSize: 0,
+2025-12-15T22:45:15.635485025Z     writable: true,
+2025-12-15T22:45:15.635486636Z     destroyed: true,
+2025-12-15T22:45:15.635488305Z     _last: true,
+2025-12-15T22:45:15.635489996Z     chunkedEncoding: false,
+2025-12-15T22:45:15.635491766Z     shouldKeepAlive: true,
+2025-12-15T22:45:15.635493486Z     maxRequestsOnConnectionReached: false,
+2025-12-15T22:45:15.635495156Z     _defaultKeepAlive: true,
+2025-12-15T22:45:15.635496826Z     useChunkedEncodingByDefault: false,
+2025-12-15T22:45:15.635498526Z     sendDate: false,
+2025-12-15T22:45:15.635500166Z     _removedConnection: false,
+2025-12-15T22:45:15.635501916Z     _removedContLen: false,
+2025-12-15T22:45:15.635503566Z     _removedTE: false,
+2025-12-15T22:45:15.635508826Z     strictContentLength: false,
+2025-12-15T22:45:15.635510566Z     _contentLength: 0,
+2025-12-15T22:45:15.635512216Z     _hasBody: true,
+2025-12-15T22:45:15.635514486Z     _trailer: '',
+2025-12-15T22:45:15.635517416Z     finished: true,
+2025-12-15T22:45:15.635520557Z     _headerSent: true,
+2025-12-15T22:45:15.635523166Z     _closed: false,
+2025-12-15T22:45:15.635526707Z     _header: 'GET /media/disk4/IMDb%20Top%20250%20Movies/12%20Years%20a%20Slave%20(2013)%20%5b1080p%5d/12.Years.a.Slave.2013.1080p.BluRay.x264.YIFY.mp4 HTTP/1.1\r\n' +
+2025-12-15T22:45:15.635529377Z       'Accept: application/json, text/plain, */*\r\n' +
+2025-12-15T22:45:15.635531837Z       'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\r\n' +
+2025-12-15T22:45:15.635571788Z       'Referer: http://103.121.39.254\r\n' +
+2025-12-15T22:45:15.635573638Z       'range: bytes=0-\r\n' +
+2025-12-15T22:45:15.635577938Z       'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+2025-12-15T22:45:15.635579698Z       'Host: 103.121.39.254\r\n' +
+2025-12-15T22:45:15.635589558Z       'Connection: keep-alive\r\n' +
+2025-12-15T22:45:15.635591599Z       '\r\n',
+2025-12-15T22:45:15.635593328Z     _keepAliveTimeout: 0,
+2025-12-15T22:45:15.635595068Z     _onPendingData: [Function: nop],
+2025-12-15T22:45:15.635596799Z     agent: Agent {
+2025-12-15T22:45:15.635598469Z       _events: [Object: null prototype],
+2025-12-15T22:45:15.635600479Z       _eventsCount: 2,
+2025-12-15T22:45:15.635603059Z       _maxListeners: undefined,
+2025-12-15T22:45:15.635606109Z       defaultPort: 80,
+2025-12-15T22:45:15.635608969Z       protocol: 'http:',
+2025-12-15T22:45:15.635611649Z       options: [Object: null prototype],
+2025-12-15T22:45:15.635614419Z       requests: [Object: null prototype] {},
+2025-12-15T22:45:15.635617169Z       sockets: [Object: null prototype],
+2025-12-15T22:45:15.635619719Z       freeSockets: [Object: null prototype] {},
+2025-12-15T22:45:15.635622339Z       keepAliveMsecs: 1000,
+2025-12-15T22:45:15.635624859Z       keepAlive: true,
+2025-12-15T22:45:15.635627729Z       maxSockets: Infinity,
+2025-12-15T22:45:15.63563048Z       maxFreeSockets: 256,
+2025-12-15T22:45:15.63563234Z       scheduling: 'lifo',
+2025-12-15T22:45:15.63563406Z       maxTotalSockets: Infinity,
+2025-12-15T22:45:15.63563579Z       totalSocketCount: 1,
+2025-12-15T22:45:15.63563744Z       [Symbol(shapeMode)]: false,
+2025-12-15T22:45:15.63564128Z       [Symbol(kCapture)]: false
+2025-12-15T22:45:15.63564308Z     },
+2025-12-15T22:45:15.63564483Z     socketPath: undefined,
+2025-12-15T22:45:15.63564649Z     method: 'GET',
+2025-12-15T22:45:15.63564816Z     maxHeaderSize: undefined,
+2025-12-15T22:45:15.63564997Z     insecureHTTPParser: undefined,
+2025-12-15T22:45:15.63565165Z     joinDuplicateHeaders: undefined,
+2025-12-15T22:45:15.63565348Z     path: '/media/disk4/IMDb%20Top%20250%20Movies/12%20Years%20a%20Slave%20(2013)%20%5b1080p%5d/12.Years.a.Slave.2013.1080p.BluRay.x264.YIFY.mp4',
+2025-12-15T22:45:15.63565516Z     _ended: false,
+2025-12-15T22:45:15.63565688Z     res: null,
+2025-12-15T22:45:15.63565851Z     aborted: false,
+2025-12-15T22:45:15.63566018Z     timeoutCb: [Function: emitRequestTimeout],
+2025-12-15T22:45:15.635661821Z     upgradeOrConnect: false,
+2025-12-15T22:45:15.635663461Z     parser: null,
+2025-12-15T22:45:15.635665101Z     maxHeadersCount: null,
+2025-12-15T22:45:15.635666741Z     reusedSocket: false,
+2025-12-15T22:45:15.635668441Z     host: '103.121.39.254',
+2025-12-15T22:45:15.635670111Z     protocol: 'http:',
+2025-12-15T22:45:15.635677781Z     _redirectable: [Circular *1],
+2025-12-15T22:45:15.635679511Z     [Symbol(shapeMode)]: false,
+2025-12-15T22:45:15.635681141Z     [Symbol(kCapture)]: false,
+2025-12-15T22:45:15.635682801Z     [Symbol(kBytesWritten)]: 0,
+2025-12-15T22:45:15.635684451Z     [Symbol(kNeedDrain)]: false,
+2025-12-15T22:45:15.635686141Z     [Symbol(corked)]: 0,
+2025-12-15T22:45:15.635687781Z     [Symbol(kChunkedBuffer)]: [],
+2025-12-15T22:45:15.635689481Z     [Symbol(kChunkedLength)]: 0,
+2025-12-15T22:45:15.635691881Z     [Symbol(kSocket)]: Socket {
+2025-12-15T22:45:15.635694661Z       connecting: false,
+2025-12-15T22:45:15.635697531Z       _hadError: true,
+2025-12-15T22:45:15.635700111Z       _parent: null,
+2025-12-15T22:45:15.635702702Z       _host: null,
+2025-12-15T22:45:15.635705612Z       _closeAfterHandlingError: false,
+2025-12-15T22:45:15.635708422Z       _events: [Object],
+2025-12-15T22:45:15.635711162Z       _readableState: [ReadableState],
+2025-12-15T22:45:15.635713842Z       _writableState: [WritableState],
+2025-12-15T22:45:15.635716102Z       allowHalfOpen: false,
+2025-12-15T22:45:15.635718382Z       _maxListeners: undefined,
+2025-12-15T22:45:15.635720922Z       _eventsCount: 8,
+2025-12-15T22:45:15.635723152Z       _sockname: null,
+2025-12-15T22:45:15.635725562Z       _pendingData: 'GET /media/disk4/IMDb%20Top%20250%20Movies/12%20Years%20a%20Slave%20(2013)%20%5b1080p%5d/12.Years.a.Slave.2013.1080p.BluRay.x264.YIFY.mp4 HTTP/1.1\r\n' +
+2025-12-15T22:45:15.635727932Z         'Accept: application/json, text/plain, */*\r\n' +
+2025-12-15T22:45:15.635730612Z         'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\r\n' +
+2025-12-15T22:45:15.635733312Z         'Referer: http://103.121.39.254\r\n' +
+2025-12-15T22:45:15.635736292Z         'range: bytes=0-\r\n' +
+2025-12-15T22:45:15.635738103Z         'Accept-Encoding: gzip, compress, deflate, br\r\n' +
+2025-12-15T22:45:15.635739733Z         'Host: 103.121.39.254\r\n' +
+2025-12-15T22:45:15.635741363Z         'Connection: keep-alive\r\n' +
+2025-12-15T22:45:15.635743023Z         '\r\n',
+2025-12-15T22:45:15.635744773Z       _pendingEncoding: 'latin1',
+2025-12-15T22:45:15.635746453Z       server: null,
+2025-12-15T22:45:15.635748113Z       _server: null,
+2025-12-15T22:45:15.635749763Z       timeout: 15000,
+2025-12-15T22:45:15.635751393Z       parser: null,
+2025-12-15T22:45:15.635753063Z       _httpMessage: [Circular *2],
+2025-12-15T22:45:15.635754713Z       [Symbol(async_id_symbol)]: 1696,
+2025-12-15T22:45:15.635756473Z       [Symbol(kHandle)]: null,
+2025-12-15T22:45:15.635758143Z       [Symbol(lastWriteQueueSize)]: 0,
+2025-12-15T22:45:15.635759813Z       [Symbol(timeout)]: Timeout {
+2025-12-15T22:45:15.635761433Z         _idleTimeout: -1,
+2025-12-15T22:45:15.635763073Z         _idlePrev: null,
+2025-12-15T22:45:15.635764713Z         _idleNext: null,
+2025-12-15T22:45:15.635766353Z         _idleStart: 383458,
+2025-12-15T22:45:15.635767964Z         _onTimeout: null,
+2025-12-15T22:45:15.635769633Z         _timerArgs: undefined,
+2025-12-15T22:45:15.635771304Z         _repeat: null,
+2025-12-15T22:45:15.635773024Z         _destroyed: true,
+2025-12-15T22:45:15.635774734Z         [Symbol(refed)]: false,
+2025-12-15T22:45:15.635776374Z         [Symbol(kHasPrimitive)]: false,
+2025-12-15T22:45:15.635778064Z         [Symbol(asyncId)]: 1705,
+2025-12-15T22:45:15.635780434Z         [Symbol(triggerId)]: 1698,
+2025-12-15T22:45:15.635783384Z         [Symbol(kAsyncContextFrame)]: undefined
+2025-12-15T22:45:15.635786344Z       },
+2025-12-15T22:45:15.635794324Z       [Symbol(kBuffer)]: null,
+2025-12-15T22:45:15.635797114Z       [Symbol(kBufferCb)]: null,
+2025-12-15T22:45:15.635799694Z       [Symbol(kBufferGen)]: null,
+2025-12-15T22:45:15.635802334Z       [Symbol(shapeMode)]: true,
+2025-12-15T22:45:15.635805154Z       [Symbol(kCapture)]: false,
+2025-12-15T22:45:15.635807294Z       [Symbol(kSetNoDelay)]: true,
+2025-12-15T22:45:15.635808955Z       [Symbol(kSetKeepAlive)]: true,
+2025-12-15T22:45:15.635810585Z       [Symbol(kSetKeepAliveInitialDelay)]: 60,
+2025-12-15T22:45:15.635812255Z       [Symbol(kBytesRead)]: 0,
+2025-12-15T22:45:15.635813935Z       [Symbol(kBytesWritten)]: 0
+2025-12-15T22:45:15.635815605Z     },
+2025-12-15T22:45:15.635817275Z     [Symbol(kOutHeaders)]: [Object: null prototype] {
+2025-12-15T22:45:15.635818925Z       accept: [Array],
+2025-12-15T22:45:15.635820635Z       'user-agent': [Array],
+2025-12-15T22:45:15.635822365Z       referer: [Array],
+2025-12-15T22:45:15.635824005Z       range: [Array],
+2025-12-15T22:45:15.635825645Z       'accept-encoding': [Array],
+2025-12-15T22:45:15.635827345Z       host: [Array]
+2025-12-15T22:45:15.635828995Z     },
+2025-12-15T22:45:15.635830645Z     [Symbol(errored)]: null,
+2025-12-15T22:45:15.635832265Z     [Symbol(kHighWaterMark)]: 65536,
+2025-12-15T22:45:15.635833975Z     [Symbol(kRejectNonStandardBodyWrites)]: false,
+2025-12-15T22:45:15.635835615Z     [Symbol(kUniqueHeaders)]: null,
+2025-12-15T22:45:15.635837306Z     [Symbol(kError)]: AxiosError: timeout of 15000ms exceeded
+2025-12-15T22:45:15.635847336Z         at RedirectableRequest.handleRequestTimeout (file:///opt/render/project/src/node_modules/axios/lib/adapters/http.js:854:15)
+2025-12-15T22:45:15.635849276Z         at RedirectableRequest.emit (node:events:518:28)
+2025-12-15T22:45:15.635851116Z         at Timeout._onTimeout (/opt/render/project/src/node_modules/follow-redirects/index.js:221:12)
+2025-12-15T22:45:15.635852786Z         at listOnTimeout (node:internal/timers:588:17)
+2025-12-15T22:45:15.635854516Z         at process.processTimers (node:internal/timers:523:7)
+2025-12-15T22:45:15.635856246Z         at Axios.request (file:///opt/render/project/src/node_modules/axios/lib/core/Axios.js:45:41)
+2025-12-15T22:45:15.635858036Z         at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2025-12-15T22:45:15.635859806Z         at async file:///opt/render/project/src/server.js:71:26 {
+2025-12-15T22:45:15.635861536Z       code: 'ECONNABORTED',
+2025-12-15T22:45:15.635863256Z       config: [Object],
+2025-12-15T22:45:15.635864926Z       request: [Circular *1]
+2025-12-15T22:45:15.635867266Z     }
+2025-12-15T22:45:15.635870056Z   },
+2025-12-15T22:45:15.635872967Z   _currentUrl: 'http://103.121.39.254/media/disk4/IMDb%20Top%20250%20Movies/12%20Years%20a%20Slave%20(2013)%20%5b1080p%5d/12.Years.a.Slave.2013.1080p.BluRay.x264.YIFY.mp4',
+2025-12-15T22:45:15.635875747Z   _timeout: null,
+2025-12-15T22:45:15.635878467Z   [Symbol(shapeMode)]: true,
+2025-12-15T22:45:15.635881037Z   [Symbol(kCapture)]: false
+2025-12-15T22:45:15.635883787Z }
+2025-12-15T22:45:15.635886537Z -----------------------------------------------------
+2025-12-15T22:51:08.093146449Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2025-12-15T22:51:08.158407223Z ==> Deploying...
+2025-12-15T22:51:23.557376013Z ==> Running 'npm run start'
+2025-12-15T22:51:24.559805066Z 
+2025-12-15T22:51:24.559834067Z > streamflow-iptv@0.0.0 start
+2025-12-15T22:51:24.559839357Z > node server.js
+2025-12-15T22:51:24.559842047Z 
+2025-12-15T22:51:26.056442707Z [SERVER] Server is running on http://localhost:10000
+2025-12-15T22:51:26.218525521Z [SERVER] Connected to the SQLite database.
+2025-12-15T22:51:29.632162137Z ==> Your service is live 🎉
+2025-12-15T22:51:29.750043358Z ==> 
+2025-12-15T22:51:29.842102622Z ==> ///////////////////////////////////////////////////////////
+2025-12-15T22:51:29.929161506Z ==> 
+2025-12-15T22:51:30.419716972Z ==> Available at your primary URL https://streamflow-backend-0dns.onrender.com
+2025-12-15T22:51:30.554112403Z ==> 
+2025-12-15T22:51:30.642804726Z ==> ///////////////////////////////////////////////////////////
