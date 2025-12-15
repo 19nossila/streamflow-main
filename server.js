@@ -5,6 +5,7 @@ import bodyParser from 'body-parser';
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import axios from 'axios'; // Import axios
 
 // Set up __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -15,52 +16,74 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
-
-// Increase the limit for JSON and URL-encoded bodies
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-// Database setup - Use a specific path and a direct constructor
+// Database setup
 const dbPath = path.resolve(__dirname, 'database.db');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error("[SERVER ERROR] Could not connect to database:", err.message);
   } else {
     console.log("[SERVER] Connected to the SQLite database.");
-
-    // Serialize execution to ensure tables are created in order
     db.serialize(() => {
-        // Create tables
-        db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT)`, (err) => {
-            if(err) console.error("Error creating users table:", err.message);
-        });
-        db.run(`CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)`, (err) => {
-            if(err) console.error("Error creating playlists table:", err.message);
-        });
-        db.run(`CREATE TABLE IF NOT EXISTS playlist_sources (id INTEGER PRIMARY KEY AUTOINCREMENT, playlist_id INTEGER, type TEXT, content TEXT, identifier TEXT, addedAt TEXT, FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE)`, (err) => {
-            if(err) console.error("Error creating playlist_sources table:", err.message);
-        });
-
-        // Add a default admin user if no users exist
+        db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT)`);
+        db.run(`CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)`);
+        db.run(`CREATE TABLE IF NOT EXISTS playlist_sources (id INTEGER PRIMARY KEY AUTOINCREMENT, playlist_id INTEGER, type TEXT, content TEXT, identifier TEXT, addedAt TEXT, FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE)`);
         db.get("SELECT * FROM users LIMIT 1", [], (err, row) => {
-            if (err) {
-                console.error("[SERVER ERROR] Error checking for users:", err.message);
-                return;
-            }
             if (!row) {
                 console.log("[SERVER] No users found. Creating default admin user (admin/admin).");
-                db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', 'admin', 'admin'], function(err) {
-                    if (err) {
-                        console.error("[SERVER ERROR] Error creating default admin user:", err.message);
-                    } else {
-                        console.log(`[SERVER] Default admin user created successfully.`);
-                    }
-                });
+                db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', 'admin', 'admin']);
             }
         });
     });
   }
 });
+
+// --- Proxy Route ---
+
+app.get('/api/proxy', async (req, res) => {
+    const videoUrl = req.query.url;
+
+    if (!videoUrl || typeof videoUrl !== 'string') {
+        return res.status(400).send('URL is required');
+    }
+
+    // If the URL is an MP4, redirect the client directly to it.
+    if (videoUrl.toLowerCase().endsWith('.mp4')) {
+        console.log(`[PROXY] Redirecting MP4 request to: ${videoUrl}`);
+        return res.redirect(videoUrl);
+    }
+
+    // For other stream types (HLS, etc.), pipe the stream to avoid CORS.
+    console.log(`[PROXY] Piping stream for: ${videoUrl}`);
+    try {
+        const response = await axios({
+            method: 'get',
+            url: videoUrl,
+            responseType: 'stream',
+            timeout: 15000, // Keep a reasonable timeout
+        });
+
+        // Pipe headers from the target to the client response
+        res.set(response.headers);
+        
+        // Pipe the data
+        response.data.pipe(res);
+
+    } catch (error) {
+        console.error('[PROXY ERROR] Failed to fetch stream:', error.message);
+        if (error.response) {
+            res.status(error.response.status).send(error.message);
+        } else if (error.code === 'ECONNABORTED') {
+             res.status(504).send('Gateway Timeout: The stream source took too long to respond.');
+        } 
+        else {
+            res.status(500).send('Internal Server Error while trying to proxy.');
+        }
+    }
+});
+
 
 // --- API Routes ---
 
@@ -69,11 +92,8 @@ app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, user) => {
         if (err) return res.status(500).json({ error: err.message });
-        if (user) {
-            res.json(user);
-        } else {
-            res.status(401).json({ error: 'Invalid credentials' });
-        }
+        if (user) res.json(user);
+        else res.status(401).json({ error: 'Invalid credentials' });
     });
 });
 
@@ -110,7 +130,7 @@ app.delete('/api/users/:userId', (req, res) => {
   });
 });
 
-// Playlists
+// Playlists & Sources
 app.get('/api/playlists', (req, res) => {
   db.all('SELECT * FROM playlists', [], (err, playlists) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -136,13 +156,12 @@ app.post('/api/playlists', (req, res) => {
 
 app.delete('/api/playlists/:playlistId', (req, res) => {
   const { playlistId } = req.params;
-  db.run('DELETE FROM playlists WHERE id = ?', [playlistId], function(err){
+  db.run('DELETE FROM playlists WHERE id = ?', [playlistId], (err) => {
       if (err) return res.status(500).json({ error: err.message });
       res.status(204).send();
   });
 });
 
-// Sources
 app.post('/api/playlists/:playlistId/sources', (req, res) => {
   const { playlistId } = req.params;
   const { type, content, identifier } = req.body;
@@ -155,7 +174,7 @@ app.post('/api/playlists/:playlistId/sources', (req, res) => {
 
 app.delete('/api/playlists/:playlistId/sources/:sourceId', (req, res) => {
   const { sourceId } = req.params;
-  db.run('DELETE FROM playlist_sources WHERE id = ?', [sourceId], function(err){
+  db.run('DELETE FROM playlist_sources WHERE id = ?', [sourceId], (err) => {
       if (err) return res.status(500).json({ error: err.message });
       res.status(204).send();
   });

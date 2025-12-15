@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
-import EmbeddedPlayer from './EmbeddedPlayer'; // Import the new player
 
 interface VideoPlayerProps {
   url: string;
@@ -12,152 +11,104 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster, autoPlay = true 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
   const hlsRef = useRef<Hls | null>(null);
-  const [isUsingProxy, setIsUsingProxy] = useState(false);
 
-  // Reset proxy state when URL changes
   useEffect(() => {
-    setIsUsingProxy(false);
     setError(null);
-  }, [url]);
-
-  // Determine if the URL is an MP4 file
-  const isMp4 = url.toLowerCase().endsWith('.mp4');
-
-  useEffect(() => {
-    if (isMp4) {
-      // If it's an MP4, we don't need the HLS logic
-      return;
-    }
-
-    let hls: Hls | null = null;
     const video = videoRef.current;
-    let networkRetryCount = 0;
-    const MAX_RETRIES = 3;
-
-    if (!isUsingProxy) setError(null);
     if (!video) return;
 
-    let playUrl = url;
+    // All requests go through our backend proxy
+    const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+    const isMp4 = url.toLowerCase().endsWith('.mp4');
 
-    if (isUsingProxy) {
-        playUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-    } else if (window.location.protocol === 'https:' && url.startsWith('http:')) {
-        playUrl = url.replace(/^http:/, 'https:');
+    // Stop any existing playback
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
     }
+    video.removeAttribute('src');
+    video.load();
 
-    if (Hls.isSupported()) {
-      hls = new Hls({
+    if (isMp4) {
+      // For MP4 files, we set the src directly to our proxy.
+      // The server will respond with a redirect, which the browser handles automatically.
+      console.log('[Player] Playing MP4 via proxy redirect...');
+      video.src = proxyUrl;
+
+      const onCanPlay = () => {
+        if (autoPlay) {
+          video.play().catch(e => console.warn('Autoplay was prevented for MP4:', e));
+        }
+      };
+
+      const onError = (e: Event) => {
+        console.error('Native video player error:', e);
+        setError('The video could not be loaded. It may be offline or in an unsupported format.');
+      };
+
+      video.addEventListener('canplay', onCanPlay);
+      video.addEventListener('error', onError);
+
+      return () => {
+        video.removeEventListener('canplay', onCanPlay);
+        video.removeEventListener('error', onError);
+      };
+
+    } else if (Hls.isSupported()) {
+      // For HLS streams, we use hls.js with the proxy URL.
+      // The server will pipe the stream to avoid CORS issues.
+      console.log('[Player] Playing HLS via proxy pipe...');
+      const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
         manifestLoadingTimeOut: 20000,
         manifestLoadingMaxRetry: 2,
-        levelLoadingTimeOut: 20000,
         fragLoadingTimeOut: 20000,
       });
       hlsRef.current = hls;
 
-      hls.loadSource(playUrl);
+      hls.loadSource(proxyUrl);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        networkRetryCount = 0;
         if (autoPlay) {
-          video.play().catch((e) => console.warn('Autoplay blocked:', e));
+          video.play().catch((e) => console.warn('Autoplay blocked for HLS:', e));
         }
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              console.warn('HLS Network error details:', data);
-              
-              if (data.response?.code === 0) {
-                  if (!isUsingProxy) {
-                      console.log("CORS/Blocked detected. Switching to Proxy mode...");
-                      setIsUsingProxy(true);
-                      hls?.destroy();
-                      return;
-                  } else {
-                      hls?.destroy();
-                      setError("Stream Unavailable: Source blocked even with Proxy.");
-                      return;
-                  }
-              }
-
-              if (networkRetryCount < MAX_RETRIES) {
-                networkRetryCount++;
-                console.log(`Network recovery attempt ${networkRetryCount}/${MAX_RETRIES}`);
-                hls?.startLoad();
-              } else {
-                hls?.destroy();
-                setError("Network error: Unable to connect to stream source.");
-              }
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              console.warn('HLS Media error details:', data);
-              hls?.recoverMediaError();
-              break;
-            default:
-              console.error('HLS Fatal error:', data);
-              hls?.destroy();
-              setError("Fatal stream error.");
-              break;
-          }
+          console.error('HLS Fatal Error:', data);
+          setError(`Stream error: ${data.details}`);
+          hls.destroy();
         }
       });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = playUrl;
-      
-      const onLoadedMetadata = () => {
-        if (autoPlay) {
-          video.play().catch((e) => console.warn('Autoplay blocked:', e));
-        }
-      };
-      
-      const onError = () => {
-        if (!isUsingProxy) {
-             setIsUsingProxy(true);
-        } else {
-             setError("Error loading stream (Native Player). Likely CORS or format issue.");
-        }
-      };
-
-      video.addEventListener('loadedmetadata', onLoadedMetadata);
-      video.addEventListener('error', onError);
 
       return () => {
+        hls.destroy();
+      };
+
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // For native HLS support (e.g., Safari)
+      console.log('[Player] Playing HLS with native support via proxy...');
+      video.src = proxyUrl;
+      const onLoadedMetadata = () => {
+        if (autoPlay) {
+          video.play().catch(e => console.warn('Autoplay blocked for native HLS:', e));
+        }
+      };
+      video.addEventListener('loadedmetadata', onLoadedMetadata);
+      return () => {
         video.removeEventListener('loadedmetadata', onLoadedMetadata);
-        video.removeEventListener('error', onError);
       };
     } else {
-      setError("HLS is not supported in this browser.");
+      setError('This browser does not support HLS streaming.');
     }
 
-    return () => {
-      if (hls) {
-        hls.destroy();
-      }
-      if (video) {
-        video.removeAttribute('src');
-        video.load(); 
-      }
-    };
-  }, [url, autoPlay, isUsingProxy, isMp4]);
-
-  // If the URL is for an MP4, render the dedicated MP4 player
-  if (isMp4) {
-    return <EmbeddedPlayer url={url} poster={poster} autoPlay={autoPlay} />;
-  }
+  }, [url, autoPlay]);
 
   return (
     <div className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden rounded-lg shadow-2xl">
-      {isUsingProxy && !error && (
-        <div className="absolute top-2 right-2 bg-yellow-600/50 text-white text-[10px] px-2 py-1 rounded backdrop-blur-md z-10 border border-yellow-500/30">
-          <i className="fas fa-shield-alt mr-1"></i> Proxy Active
-        </div>
-      )}
-
       {error ? (
         <div className="text-center p-8 bg-gray-900/80 rounded-xl border border-red-500/50 backdrop-blur-sm max-w-md mx-4">
           <i className="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
