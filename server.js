@@ -5,7 +5,6 @@ import bodyParser from 'body-parser';
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import axios from 'axios'; // Import axios
 
 // Set up __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -19,7 +18,7 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-// --- DATABASE SETUP (Omitted for brevity, no changes here) ---
+// --- DATABASE SETUP ---
 const isRender = process.env.RENDER === 'true';
 const diskMountPath = process.env.RENDER_DISK_MOUNT_PATH;
 let dbPath;
@@ -48,83 +47,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-// --- FINAL PROXY ROUTE WITH DEEP LOGGING ---
-app.get('/api/proxy', async (req, res) => {
-    const { url } = req.query;
 
-    if (!url || typeof url !== 'string') {
-        return res.status(400).send('URL is required');
-    }
-
-    try {
-        const requestHeaders = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Referer': new URL(url).origin // Add a referer header
-        };
-        
-        if (req.headers.range) {
-            requestHeaders.range = req.headers.range;
-        }
-
-        console.log(`[PROXY] Requesting URL: ${url}`);
-
-        const response = await axios({
-            method: 'get',
-            url: url,
-            responseType: 'stream',
-            headers: requestHeaders,
-            timeout: 15000 // 15 seconds
-        });
-
-        const sourceHeaders = response.headers;
-        const statusCode = response.status;
-        console.log(`[PROXY] Source server responded with status ${statusCode}`);
-
-        res.writeHead(statusCode, {
-            'Content-Type': sourceHeaders['content-type'],
-            'Content-Length': sourceHeaders['content-length'],
-            'Content-Range': sourceHeaders['content-range'],
-            'Accept-Ranges': sourceHeaders['accept-ranges'],
-        });
-
-        response.data.pipe(res);
-
-    } catch (error) {
-        console.error("-----------------------------------------------------");
-        console.error(`[PROXY] CRITICAL FAILURE for URL: ${url}`)
-        if (error.response) {
-            // The request was made and the server responded with a status code
-            // that falls out of the range of 2xx
-            console.error("[PROXY] Status from Source:", error.response.status);
-            console.error("[PROXY] Headers from Source:", JSON.stringify(error.response.headers, null, 2));
-            // Try to log the data from the error response, it might contain a message
-            const errorData = await new Promise(resolve => {
-                let body = '';
-                const stream = error.response.data;
-                stream.on('data', chunk => body += chunk);
-                stream.on('end', () => resolve(body));
-                stream.on('error', () => resolve('Could not read error stream.'));
-            });
-            console.error("[PROXY] Data from Source:", errorData);
-
-        } else if (error.request) {
-            // The request was made but no response was received
-            console.error("[PROXY] No response received from source server.");
-            console.error("[PROXY] Error Request Details:", error.request);
-        } else {
-            // Something happened in setting up the request that triggered an Error
-            console.error("[PROXY] Generic Error:", error.message);
-        }
-        console.error("-----------------------------------------------------");
-
-        if (!res.headersSent) {
-            res.status(500).send('A critical error occurred while trying to proxy the video stream.');
-        }
-    }
-});
-
-
-// --- API Routes (Omitted for brevity, no changes here) ---
+// --- API Routes ---
 // Auth
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;

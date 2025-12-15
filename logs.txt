@@ -1,0 +1,200 @@
+2025-12-15T22:04:11.272615278Z ==> Deploying...
+2025-12-15T22:04:30.623543094Z 
+2025-12-15T22:04:30.623561774Z > streamflow-iptv@0.0.0 start
+2025-12-15T22:04:30.623565824Z > node server.js
+2025-12-15T22:04:30.623568384Z 
+2025-12-15T22:04:33.223062553Z [SERVER] Not on Render or disk not found. Using local database at: /opt/render/project/src/database.db
+2025-12-15T22:04:33.310088487Z [SERVER] Server is running on http://localhost:10000
+2025-12-15T22:04:33.311558786Z [SERVER] Connected to the SQLite database.
+2025-12-15T22:04:42.757471908Z ==> Your service is live 🎉
+2025-12-15T22:04:42.841478892Z ==> 
+2025-12-15T22:04:42.925915006Z ==> ///////////////////////////////////////////////////////////
+2025-12-15T22:04:43.01727521Z ==> 
+2025-12-15T22:04:43.099686494Z ==> Available at your primary URL https://streamflow-backend-0dns.onrender.com
+2025-12-15T22:04:43.185130838Z ==> 
+2025-12-15T22:04:43.271959672Z ==> ///////////////////////////////////////////////////////////
+2025-12-15T22:06:46.028465159Z [PROXY] Streaming: http://zplaypro.lat:2095/movie/lhv0gwmkw/60279zplayer/364388.mp4
+2025-12-15T22:06:46.321505008Z [PROXY ERROR] Failed to fetch http://zplaypro.lat:2095/movie/lhv0gwmkw/60279zplayer/364388.mp4: Request failed with status code 521
+2025-12-15T22:09:36.656769544Z ==> Detected service running on port 10000
+2025-12-15T22:09:36.836323367Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2025-12-15T22:13:30.273398316Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2025-12-15T22:13:30.33985443Z ==> Deploying...
+2025-12-15T22:13:46.674262236Z ==> Running 'npm run start'
+2025-12-15T22:13:47.76586279Z 
+2025-12-15T22:13:47.765883841Z > streamflow-iptv@0.0.0 start
+2025-12-15T22:13:47.765887071Z > node server.js
+2025-12-15T22:13:47.765888771Z 
+2025-12-15T22:13:50.172989813Z [SERVER] Not on Render or disk not found. Using local database at: /opt/render/project/src/database.db
+2025-12-15T22:13:50.26385706Z [SERVER] Server is running on http://localhost:10000
+2025-12-15T22:13:50.365923054Z [SERVER] Connected to the SQLite database.
+2025-12-15T22:13:51.317930305Z ==> Your service is live 🎉
+2025-12-15T22:13:51.413006069Z ==> 
+2025-12-15T22:13:51.509507162Z ==> ///////////////////////////////////////////////////////////
+2025-12-15T22:13:51.593159556Z ==> 
+2025-12-15T22:13:51.701425689Z ==> Available at your primary URL https://streamflow-backend-0dns.onrender.com
+2025-12-15T22:13:51.795607782Z ==> 
+2025-12-15T22:13:51.895276805Z ==> ///////////////////////////////////////////////////////////
+2025-12-15T22:18:05.568163657Z [PROXY] Request for: http://zplaypro.lat:2095/movie/lhv0gwmkw/60279zplayer/364388.mp4
+2025-12-15T22:18:05.568207458Z [PROXY] Client sent a Range header: bytes=0-
+2025-12-15T22:18:05.923017346Z [PROXY ERROR] Source server responded with 521
+2025-12-15T22:18:53.887703348Z ==> Detected service running on port 10000
+2025-12-15T22:18:54.235386893Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2025-12-15T22:20:09.32418806Z ==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
+2025-12-15T22:20:09.389004845Z ==> Deploying...
+2025-12-15T22:20:40.668267864Z ==> Running 'npm run start'
+2025-12-15T22:20:41.75790441Z 
+2025-12-15T22:20:41.757947081Z > streamflow-iptv@0.0.0 start
+2025-12-15T22:20:41.757952171Z > node server.js
+2025-12-15T22:20:41.757954381Z 
+2025-12-15T22:20:44.064184683Z [SERVER] Not on Render or disk not found. Using local database at: /opt/render/project/src/database.db
+2025-12-15T22:20:44.067374223Z [SERVER] Server is running on http://localhost:10000
+2025-12-15T22:20:44.264201146Z [SERVER] Connected to the SQLite database.
+2025-12-15T22:20:50.728717606Z ==> Your service is live 🎉
+2025-12-15T22:20:51.229883191Z ==> 
+2025-12-15T22:20:51.322268975Z ==> ///////////////////////////////////////////////////////////
+2025-12-15T22:20:51.408408999Z ==> 
+2025-12-15T22:20:51.489622483Z ==> Available at your primary URL https://streamflow-backend-0dns.onrender.com
+2025-12-15T22:20:51.578682447Z ==> 
+2025-12-15T22:20:51.67038189Z ==> ///////////////////////////////////////////////////////////
+2025-12-15T22:22:12.280563037Z [PROXY] Requesting URL: http://zplaypro.lat:2095/movie/lhv0gwmkw/60279zplayer/364388.mp4
+2025-12-15T22:22:12.664158555Z -----------------------------------------------------
+2025-12-15T22:22:12.664174416Z [PROXY] CRITICAL FAILURE for URL: http://zplaypro.lat:2095/movie/lhv0gwmkw/60279zplayer/364388.mp4
+2025-12-15T22:22:12.664264758Z [PROXY] Status from Source: 521
+2025-12-15T22:22:12.66432492Z [PROXY] Headers from Source: {
+2025-12-15T22:22:12.66433177Z   "date": "Mon, 15 Dec 2025 22:22:12 GMT",
+2025-12-15T22:22:12.6643347Z   "content-type": "text/html; charset=UTF-8",
+2025-12-15T22:22:12.664337671Z   "content-length": "6974",
+2025-12-15T22:22:12.664340431Z   "connection": "keep-alive",
+2025-12-15T22:22:12.664343811Z   "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+2025-12-15T22:22:12.664347421Z   "expires": "Thu, 01 Jan 1970 00:00:01 GMT",
+2025-12-15T22:22:12.664350081Z   "referrer-policy": "same-origin",
+2025-12-15T22:22:12.664352811Z   "x-frame-options": "SAMEORIGIN",
+2025-12-15T22:22:12.664355541Z   "server": "cloudflare",
+2025-12-15T22:22:12.664358261Z   "cf-ray": "9ae956a01f47c562-IAD",
+2025-12-15T22:22:12.664361081Z   "alt-svc": "h3=\":443\"; ma=86400"
+2025-12-15T22:22:12.664363831Z }
+2025-12-15T22:22:12.665477003Z [PROXY] Data from Source: <!DOCTYPE html>
+2025-12-15T22:22:12.665486053Z <!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->
+2025-12-15T22:22:12.665488983Z <!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en-US"> <![endif]-->
+2025-12-15T22:22:12.665491773Z <!--[if IE 8]>    <html class="no-js ie8 oldie" lang="en-US"> <![endif]-->
+2025-12-15T22:22:12.665494493Z <!--[if gt IE 8]><!--> <html class="no-js" lang="en-US"> <!--<![endif]-->
+2025-12-15T22:22:12.665497203Z <head>
+2025-12-15T22:22:12.665499863Z 
+2025-12-15T22:22:12.665503633Z <title>zplaypro.lat | 521: Web server is down</title>
+2025-12-15T22:22:12.665506884Z <meta charset="UTF-8" />
+2025-12-15T22:22:12.665509644Z <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+2025-12-15T22:22:12.665512464Z <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+2025-12-15T22:22:12.665515254Z <meta name="robots" content="noindex, nofollow" />
+2025-12-15T22:22:12.665518014Z <meta name="viewport" content="width=device-width,initial-scale=1" />
+2025-12-15T22:22:12.665520694Z <link rel="stylesheet" id="cf_styles-css" href="/cdn-cgi/styles/main.css" />
+2025-12-15T22:22:12.665523394Z </head>
+2025-12-15T22:22:12.665526144Z <body>
+2025-12-15T22:22:12.665528854Z <div id="cf-wrapper">
+2025-12-15T22:22:12.665531574Z     <div id="cf-error-details" class="p-0">
+2025-12-15T22:22:12.665568695Z         <header class="mx-auto pt-10 lg:pt-6 lg:px-8 w-240 lg:w-full mb-8">
+2025-12-15T22:22:12.665572905Z             <h1 class="inline-block sm:block sm:mb-2 font-light text-60 lg:text-4xl text-black-dark leading-tight mr-2">
+2025-12-15T22:22:12.665575746Z                 <span class="inline-block">Web server is down</span>
+2025-12-15T22:22:12.665578506Z                 <span class="code-label">Error code 521</span>
+2025-12-15T22:22:12.665590506Z             </h1>
+2025-12-15T22:22:12.665592336Z             <div>
+2025-12-15T22:22:12.665595776Z                 Visit <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_521&utm_campaign=zplaypro.lat" target="_blank" rel="noopener noreferrer">cloudflare.com</a> for more information.
+2025-12-15T22:22:12.665597506Z             </div>
+2025-12-15T22:22:12.665599276Z             <div class="mt-3">2025-12-15 22:22:12 UTC</div>
+2025-12-15T22:22:12.665601006Z         </header>
+2025-12-15T22:22:12.665602666Z         <div class="my-8 bg-gradient-gray">
+2025-12-15T22:22:12.665604316Z             <div class="w-240 lg:w-full mx-auto">
+2025-12-15T22:22:12.665606046Z                 <div class="clearfix md:px-8">
+2025-12-15T22:22:12.665609167Z                     <div id="cf-browser-status" class=" relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+2025-12-15T22:22:12.665611676Z   <div class="relative mb-10 md:m-0">
+2025-12-15T22:22:12.665613347Z     
+2025-12-15T22:22:12.665615717Z     <span class="cf-icon-browser block md:hidden h-20 bg-center bg-no-repeat"></span>
+2025-12-15T22:22:12.665617517Z     <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+2025-12-15T22:22:12.665619197Z     
+2025-12-15T22:22:12.665620857Z   </div>
+2025-12-15T22:22:12.665622577Z   <span class="md:block w-full truncate">You</span>
+2025-12-15T22:22:12.665624307Z   <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+2025-12-15T22:22:12.665626087Z   
+2025-12-15T22:22:12.665627837Z     Browser
+2025-12-15T22:22:12.665629547Z   
+2025-12-15T22:22:12.665631277Z   </h3>
+2025-12-15T22:22:12.665632947Z   
+2025-12-15T22:22:12.665634677Z   <span class="leading-1.3 text-2xl text-green-success">Working</span>
+2025-12-15T22:22:12.665636357Z   
+2025-12-15T22:22:12.665638017Z </div>
+2025-12-15T22:22:12.665639837Z                     <div id="cf-cloudflare-status" class=" relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+2025-12-15T22:22:12.665641527Z   <div class="relative mb-10 md:m-0">
+2025-12-15T22:22:12.665644457Z     <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_521&#38;utm_campaign=zplaypro.lat" target="_blank" rel="noopener noreferrer">
+2025-12-15T22:22:12.665646208Z     <span class="cf-icon-cloud block md:hidden h-20 bg-center bg-no-repeat"></span>
+2025-12-15T22:22:12.665647948Z     <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+2025-12-15T22:22:12.665649648Z     </a>
+2025-12-15T22:22:12.665651318Z   </div>
+2025-12-15T22:22:12.665652968Z   <span class="md:block w-full truncate">Ashburn</span>
+2025-12-15T22:22:12.665654648Z   <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+2025-12-15T22:22:12.665656348Z   <a href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_521&utm_campaign=zplaypro.lat" target="_blank" rel="noopener noreferrer">
+2025-12-15T22:22:12.665658108Z     Cloudflare
+2025-12-15T22:22:12.665659838Z   </a>
+2025-12-15T22:22:12.665661548Z   </h3>
+2025-12-15T22:22:12.665663288Z   
+2025-12-15T22:22:12.665664968Z   <span class="leading-1.3 text-2xl text-green-success">Working</span>
+2025-12-15T22:22:12.665666618Z   
+2025-12-15T22:22:12.665668288Z </div>
+2025-12-15T22:22:12.665670008Z                     <div id="cf-host-status" class="cf-error-source relative w-1/3 md:w-full py-15 md:p-0 md:py-8 md:text-left md:border-solid md:border-0 md:border-b md:border-gray-400 overflow-hidden float-left md:float-none text-center">
+2025-12-15T22:22:12.665675918Z   <div class="relative mb-10 md:m-0">
+2025-12-15T22:22:12.665677768Z     
+2025-12-15T22:22:12.665679498Z     <span class="cf-icon-server block md:hidden h-20 bg-center bg-no-repeat"></span>
+2025-12-15T22:22:12.665681238Z     <span class="cf-icon-error w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4"></span>
+2025-12-15T22:22:12.665682909Z     
+2025-12-15T22:22:12.665684538Z   </div>
+2025-12-15T22:22:12.665686199Z   <span class="md:block w-full truncate">zplaypro.lat</span>
+2025-12-15T22:22:12.665687959Z   <h3 class="md:inline-block mt-3 md:mt-0 text-2xl text-gray-600 font-light leading-1.3">
+2025-12-15T22:22:12.665689639Z   
+2025-12-15T22:22:12.665693529Z     Host
+2025-12-15T22:22:12.665695349Z   
+2025-12-15T22:22:12.665697059Z   </h3>
+2025-12-15T22:22:12.665698759Z   
+2025-12-15T22:22:12.665700479Z   <span class="leading-1.3 text-2xl text-red-error">Error</span>
+2025-12-15T22:22:12.665702149Z   
+2025-12-15T22:22:12.665703849Z </div>
+2025-12-15T22:22:12.665705579Z                 </div>
+2025-12-15T22:22:12.665707269Z             </div>
+2025-12-15T22:22:12.665708929Z         </div>
+2025-12-15T22:22:12.665710549Z 
+2025-12-15T22:22:12.665712229Z         <div class="w-240 lg:w-full mx-auto mb-8 lg:px-8">
+2025-12-15T22:22:12.665713979Z             <div class="clearfix">
+2025-12-15T22:22:12.665715679Z                 <div class="w-1/2 md:w-full float-left pr-6 md:pb-10 md:pr-0 leading-relaxed">
+2025-12-15T22:22:12.66571741Z                     <h2 class="text-3xl font-normal leading-1.3 mb-4">What happened?</h2>
+2025-12-15T22:22:12.665719219Z                     <p>The web server is not returning a connection. As a result, the web page is not displaying.</p>
+2025-12-15T22:22:12.66572095Z                 </div>
+2025-12-15T22:22:12.6657227Z                 <div class="w-1/2 md:w-full float-left leading-relaxed">
+2025-12-15T22:22:12.66572437Z                     <h2 class="text-3xl font-normal leading-1.3 mb-4">What can I do?</h2>
+2025-12-15T22:22:12.66572605Z                     
+2025-12-15T22:22:12.66572849Z                 <h3 class="text-15 font-semibold mb-2">If you are a visitor of this website:</h3>
+2025-12-15T22:22:12.6657303Z                 <p class="mb-6">Please try again in a few minutes.</p>
+2025-12-15T22:22:12.66573187Z 
+2025-12-15T22:22:12.66573367Z                 <h3 class="text-15 font-semibold mb-2">If you are the owner of this website:</h3>
+2025-12-15T22:22:12.66573687Z                 <p><span>Contact your hosting provider letting them know your web server is not responding.</span> <a rel="noopener noreferrer" href="https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-521/">Additional troubleshooting information</a>.</p>
+2025-12-15T22:22:12.6657386Z                 </div>
+2025-12-15T22:22:12.66574027Z             </div>
+2025-12-15T22:22:12.66574193Z         </div>
+2025-12-15T22:22:12.66574348Z 
+2025-12-15T22:22:12.66574667Z         <div class="cf-error-footer cf-wrapper w-240 lg:w-full py-10 sm:py-4 sm:px-8 mx-auto text-center sm:text-left border-solid border-0 border-t border-gray-300">
+2025-12-15T22:22:12.66574839Z     <p class="text-13">
+2025-12-15T22:22:12.66575062Z       <span class="cf-footer-item sm:block sm:mb-1">Cloudflare Ray ID: <strong class="font-semibold">9ae956a01f47c562</strong></span>
+2025-12-15T22:22:12.6657523Z       <span class="cf-footer-separator sm:hidden">&bull;</span>
+2025-12-15T22:22:12.665754051Z       <span id="cf-footer-item-ip" class="cf-footer-item hidden sm:block sm:mb-1">
+2025-12-15T22:22:12.665758501Z         Your IP:
+2025-12-15T22:22:12.665760241Z         <button type="button" id="cf-footer-ip-reveal" class="cf-footer-ip-reveal-btn">Click to reveal</button>
+2025-12-15T22:22:12.665761971Z         <span class="hidden" id="cf-footer-ip">74.220.49.253</span>
+2025-12-15T22:22:12.665763631Z         <span class="cf-footer-separator sm:hidden">&bull;</span>
+2025-12-15T22:22:12.665765321Z       </span>
+2025-12-15T22:22:12.665768531Z       <span class="cf-footer-item sm:block sm:mb-1"><span>Performance &amp; security by</span> <a rel="noopener noreferrer" href="https://www.cloudflare.com/5xx-error-landing?utm_source=errorcode_521&#38;utm_campaign=zplaypro.lat" id="brand_link" target="_blank">Cloudflare</a></span>
+2025-12-15T22:22:12.665770291Z       
+2025-12-15T22:22:12.665771991Z     </p>
+2025-12-15T22:22:12.665775511Z     <script>(function(){function d(){var b=a.getElementById("cf-footer-item-ip"),c=a.getElementById("cf-footer-ip-reveal");b&&"classList"in b&&(b.classList.remove("hidden"),c.addEventListener("click",function(){c.classList.add("hidden");a.getElementById("cf-footer-ip").classList.remove("hidden")}))}var a=document;document.addEventListener&&a.addEventListener("DOMContentLoaded",d)})();</script>
+2025-12-15T22:22:12.665777351Z   </div><!-- /.error-footer -->
+2025-12-15T22:22:12.665778921Z 
+2025-12-15T22:22:12.665780581Z     </div>
+2025-12-15T22:22:12.665782321Z </div>
+2025-12-15T22:22:12.665784061Z </body>
+2025-12-15T22:22:12.665785792Z </html>
+2025-12-15T22:22:12.665790752Z -----------------------------------------------------

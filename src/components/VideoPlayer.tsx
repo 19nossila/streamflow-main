@@ -6,9 +6,6 @@ interface VideoPlayerProps {
   poster?: string | null;
 }
 
-// Get the backend URL from environment variables, with a fallback for local development
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -19,24 +16,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
 
     setError(null); // Reset error on new URL
 
-    const isMp4 = url.toLowerCase().endsWith('.mp4');
     let hls: Hls | null = null;
 
-    if (isMp4) {
-        // --- MP4 PLAYBACK VIA PROXY ---
-        console.log("[VideoPlayer] Detected MP4 stream. Using server proxy.");
-        const proxyUrl = `${API_URL}/api/proxy?url=${encodeURIComponent(url)}`;
-        console.log(`[VideoPlayer] Proxy URL: ${proxyUrl}`);
-
-        video.src = proxyUrl;
-        video.load();
+    // Treat MP4 files like native HLS streams: try to play them directly.
+    if (url.toLowerCase().endsWith('.mp4')) {
+        console.log("[VideoPlayer] Detected MP4 stream. Attempting direct playback.");
+        video.src = url;
         video.addEventListener('error', (e) => {
-            console.error("[VideoPlayer] Error playing proxied MP4:", e);
-            setError('The server proxy could not play this video file. The stream might be offline or invalid.');
+            console.error("[VideoPlayer] Error playing MP4 directly:", e);
+            setError('Could not play this video file. The stream may be offline, invalid, or protected by CORS.');
         });
 
     } else if (Hls.isSupported()) {
-        // --- HLS.JS PLAYBACK (direct) ---
+        // --- HLS.JS PLAYBACK (for m3u8 streams) ---
         console.log("[VideoPlayer] Detected HLS stream. Using hls.js.");
         hls = new Hls();
         hls.loadSource(url);
