@@ -32,8 +32,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster }) => {
         video.load();
         video.addEventListener('error', (e) => {
             console.error("[VideoPlayer] Error playing proxied MP4:", e);
-            // MODIFIED ERROR: Display the URL that was attempted
-            setError(`Proxy error. Attempted to connect to: ${API_URL}`);
+            setError('The server proxy could not play this video file. The stream might be offline or invalid.');
         });
 
     } else if (Hls.isSupported()) {

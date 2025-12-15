@@ -65,6 +65,12 @@ app.get('/api/proxy', async (req, res) => {
             responseType: 'stream',
         });
 
+        // Forward the important headers from the original response to the client
+        res.setHeader('Content-Type', response.headers['content-type']);
+        if (response.headers['content-length']) {
+            res.setHeader('Content-Length', response.headers['content-length']);
+        }
+
         // Pipe the video stream directly to the client response
         response.data.pipe(res);
 
