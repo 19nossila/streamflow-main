@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { User, StoredPlaylist } from '../types';
@@ -14,8 +15,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
   const [users, setUsers] = useState<User[]>([]);
   const [playlists, setPlaylists] = useState<StoredPlaylist[]>([]);
   
-  // UI State for Playlists
+  // UI State
   const [editingPlaylistId, setEditingPlaylistId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Forms State
   const [newUser, setNewUser] = useState({ username: '', password: '' });
@@ -36,9 +38,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
     loadData();
   }, []);
 
-  const loadData = () => {
-    setUsers(storageService.getUsers());
-    setPlaylists(storageService.getPlaylists());
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [users, playlists] = await Promise.all([
+        storageService.getUsers(),
+        storageService.getPlaylists(),
+      ]);
+      setUsers(users);
+      setPlaylists(playlists);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const clearMessages = () => {
@@ -47,12 +60,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
   };
 
   // --- User Management ---
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      storageService.addUser({ ...newUser, role: 'user' });
+      await storageService.addUser({ ...newUser, role: 'user' });
       setNewUser({ username: '', password: '' });
-      loadData();
+      await loadData();
       clearMessages();
       setSuccessMsg('User added successfully');
     } catch (err: any) {
@@ -60,11 +73,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
     }
   };
 
-  const handleDeleteUser = (id: string) => {
+  const handleDeleteUser = async (id: string) => {
     if (confirm('Are you sure?')) {
       try {
-        storageService.deleteUser(id);
-        loadData();
+        await storageService.deleteUser(id);
+        await loadData();
         clearMessages();
       } catch (err: any) {
         setError(err.message);
@@ -73,7 +86,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
   };
 
   // --- Settings / Password Management ---
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
       e.preventDefault();
       clearMessages();
       
@@ -90,7 +103,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
           const currentUser = storageService.getCurrentUser();
           if (!currentUser) throw new Error("Not logged in");
           
-          storageService.updateUserPassword(currentUser.id, passwords.new);
+          await storageService.updateUserPassword(currentUser.id, passwords.new);
           setPasswords({ new: '', confirm: '' });
           setSuccessMsg("Password updated successfully.");
       } catch (err: any) {
@@ -99,9 +112,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
   };
 
   // --- Backup / Restore ---
-  const handleExportBackup = () => {
+  const handleExportBackup = async () => {
       try {
-        const data = storageService.exportData();
+        const data = await storageService.exportData();
         const blob = new Blob([data], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -117,7 +130,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
       }
   };
 
-  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportBackup = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
@@ -127,10 +140,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
       }
 
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
           try {
               const content = event.target?.result as string;
-              storageService.importData(content);
+              await storageService.importData(content);
               alert("Import successful! The page will now reload.");
               window.location.reload();
           } catch (err: any) {
@@ -141,13 +154,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
   };
 
   // --- Playlist (Collection) Management ---
-  const handleCreatePlaylist = (e: React.FormEvent) => {
+  const handleCreatePlaylist = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
           if (!newPlaylistName.trim()) return;
-          const newPl = storageService.createPlaylist(newPlaylistName);
+          const newPl = await storageService.createPlaylist(newPlaylistName);
           setNewPlaylistName('');
-          loadData();
+          await loadData();
           setEditingPlaylistId(newPl.id); // Auto enter edit mode
           clearMessages();
           setSuccessMsg(`Created playlist "${newPl.name}"`);
@@ -156,11 +169,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
       }
   };
 
-  const handleDeletePlaylist = (id: string) => {
+  const handleDeletePlaylist = async (id: string) => {
       if (confirm('Delete this entire playlist and all its sources?')) {
-          storageService.deletePlaylist(id);
+          await storageService.deletePlaylist(id);
           if (editingPlaylistId === id) setEditingPlaylistId(null);
-          loadData();
+          await loadData();
       }
   };
 
@@ -186,7 +199,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
                   if (!res.ok) throw new Error("Fetch failed");
                   const content = await res.text();
                   
-                  storageService.addSourceToPlaylist(playlistId, {
+                  await storageService.addSourceToPlaylist(playlistId, {
                       type: 'url',
                       content,
                       identifier: url
@@ -199,7 +212,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
           }
           
           setSourceUrls('');
-          loadData();
+          await loadData();
           
           if (fail > 0) setError(`Added ${success} URLs. Failed to add ${fail}.`);
           else setSuccessMsg(`Successfully added ${success} URLs.`);
@@ -223,10 +236,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
 
       Array.from(files).forEach((file: any) => {
           const reader = new FileReader();
-          reader.onload = (event) => {
+          reader.onload = async (event) => {
               try {
                   const content = event.target?.result as string;
-                  storageService.addSourceToPlaylist(playlistId, {
+                  await storageService.addSourceToPlaylist(playlistId, {
                       type: 'file',
                       content,
                       identifier: file.name
@@ -236,7 +249,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
               } finally {
                   processed++;
                   if (processed === total) {
-                      loadData();
+                      await loadData();
                       setUploadLoading(false);
                       setSuccessMsg(`Uploaded ${total} files.`);
                   }
@@ -246,14 +259,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
       });
   };
 
-  const handleRemoveSource = (playlistId: string, sourceId: string) => {
+  const handleRemoveSource = async (playlistId: string, sourceId: string) => {
       if (confirm("Remove this source?")) {
-          storageService.removeSourceFromPlaylist(playlistId, sourceId);
-          loadData();
+          await storageService.removeSourceFromPlaylist(playlistId, sourceId);
+          await loadData();
       }
   };
 
   const activePlaylist = playlists.find(p => p.id === editingPlaylistId);
+
+  if (loading) {
+    return (
+        <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+            <i className="fas fa-spinner fa-spin text-4xl"></i>
+        </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
