@@ -48,7 +48,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-// --- PROXY ROUTE ---
+// --- ADVANCED PROXY ROUTE ---
 app.get('/api/proxy', async (req, res) => {
     const { url } = req.query;
 
@@ -56,26 +56,44 @@ app.get('/api/proxy', async (req, res) => {
         return res.status(400).send('URL is required');
     }
 
-    console.log(`[PROXY] Streaming: ${url}`);
-
     try {
+        console.log(`[PROXY] Request for: ${url}`);
+        
+        // Forward the Range header from the client if it exists
+        const requestHeaders = {};
+        if (req.headers.range) {
+            console.log(`[PROXY] Client sent a Range header: ${req.headers.range}`);
+            requestHeaders.range = req.headers.range;
+        }
+
         const response = await axios({
             method: 'get',
             url: url,
             responseType: 'stream',
+            headers: requestHeaders,
         });
 
-        // Forward the important headers from the original response to the client
-        res.setHeader('Content-Type', response.headers['content-type']);
-        if (response.headers['content-length']) {
-            res.setHeader('Content-Length', response.headers['content-length']);
-        }
+        // Get the headers from the source video server
+        const sourceHeaders = response.headers;
+        console.log(`[PROXY] Source server responded with status ${response.status}`);
 
-        // Pipe the video stream directly to the client response
+        // Write the headers from the source server to our response
+        res.writeHead(response.status, {
+            'Content-Type': sourceHeaders['content-type'],
+            'Content-Length': sourceHeaders['content-length'],
+            'Content-Range': sourceHeaders['content-range'],
+            'Accept-Ranges': sourceHeaders['accept-ranges'],
+        });
+
+        // Pipe the video stream data to the client
         response.data.pipe(res);
 
     } catch (error) {
-        console.error(`[PROXY ERROR] Failed to fetch ${url}:`, error.message);
+        if (error.response) {
+            console.error(`[PROXY ERROR] Source server responded with ${error.response.status}`);
+        } else {
+            console.error(`[PROXY ERROR] Failed to fetch ${url}:`, error.message);
+        }
         res.status(500).send('Failed to fetch the video stream');
     }
 });
