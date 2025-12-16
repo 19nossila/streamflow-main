@@ -5,21 +5,18 @@ import bodyParser from 'body-parser';
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import axios from 'axios'; // Import axios
+import axios from 'axios';
 
-// Set up __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-// Database setup
 const dbPath = path.resolve(__dirname, 'database.db');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
@@ -40,8 +37,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
-// --- Proxy Route ---
-
+// --- Smart Proxy Route for All Video Streams ---
 app.get('/api/proxy', async (req, res) => {
     const videoUrl = req.query.url;
 
@@ -49,26 +45,33 @@ app.get('/api/proxy', async (req, res) => {
         return res.status(400).send('URL is required');
     }
 
-    // If the URL is an MP4, redirect the client directly to it.
-    if (videoUrl.toLowerCase().endsWith('.mp4')) {
-        console.log(`[PROXY] Redirecting MP4 request to: ${videoUrl}`);
-        return res.redirect(videoUrl);
-    }
+    console.log(`[PROXY] Streaming request for: ${videoUrl}`);
 
-    // For other stream types (HLS, etc.), pipe the stream to avoid CORS.
-    console.log(`[PROXY] Piping stream for: ${videoUrl}`);
     try {
+        // We must forward the Range header from the client to the target server.
+        // This is essential for video seeking (jumping to different parts of the video).
+        const requestHeaders = {};
+        if (req.headers.range) {
+            requestHeaders.range = req.headers.range;
+            console.log(`[PROXY] Forwarding range header: ${req.headers.range}`);
+        }
+
         const response = await axios({
             method: 'get',
             url: videoUrl,
             responseType: 'stream',
-            timeout: 15000, // Keep a reasonable timeout
+            headers: requestHeaders, // Pass the crucial Range header.
+            timeout: 15000, 
         });
 
-        // Pipe headers from the target to the client response
+        // Pass back the headers from the target server to our client.
+        // This includes 'Content-Type', 'Content-Length', 'Accept-Ranges', etc.
         res.set(response.headers);
         
-        // Pipe the data
+        // Set the HTTP status code from the target's response (e.g., 200 for start, 206 for partial content).
+        res.status(response.status);
+
+        // Pipe the video data directly to the client.
         response.data.pipe(res);
 
     } catch (error) {
@@ -76,18 +79,14 @@ app.get('/api/proxy', async (req, res) => {
         if (error.response) {
             res.status(error.response.status).send(error.message);
         } else if (error.code === 'ECONNABORTED') {
-             res.status(504).send('Gateway Timeout: The stream source took too long to respond.');
-        } 
-        else {
-            res.status(500).send('Internal Server Error while trying to proxy.');
+            res.status(504).send('Gateway Timeout: The stream source took too long to respond.');
+        } else {
+            res.status(500).send('Internal Server Error while proxying the stream.');
         }
     }
 });
 
-
 // --- API Routes ---
-
-// Auth
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, user) => {
@@ -97,7 +96,6 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Users
 app.get('/api/users', (req, res) => {
   db.all('SELECT id, username, role FROM users', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -130,7 +128,6 @@ app.delete('/api/users/:userId', (req, res) => {
   });
 });
 
-// Playlists & Sources
 app.get('/api/playlists', (req, res) => {
   db.all('SELECT * FROM playlists', [], (err, playlists) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -179,7 +176,6 @@ app.delete('/api/playlists/:playlistId/sources/:sourceId', (req, res) => {
       res.status(204).send();
   });
 });
-
 
 app.listen(PORT, () => {
   console.log(`[SERVER] Server is running on http://localhost:${PORT}`);
