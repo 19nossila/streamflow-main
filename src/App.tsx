@@ -1,218 +1,185 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { Channel, PlaylistData, User, StoredPlaylist } from './types';
-import { parseM3U } from './services/m3uParser';
-import { storageService } from './services/storage';
+import axios from 'axios';
+import { User, Channel, Category, VodStream, SeriesStream, SeriesInfo, Episode } from './types';
+import Login from './components/Login';
 import VideoPlayer from './components/VideoPlayer';
 import Sidebar from './components/Sidebar';
-import Login from './components/Login';
-import AdminDashboard from './components/AdminDashboard';
-import PlaylistSelector from './components/PlaylistSelector';
+import AppHeader, { ViewType } from './components/AppHeader';
+import MoviesGrid from './components/MoviesGrid';
+import SeriesGrid from './components/SeriesGrid';
+import SeriesDetail from './components/SeriesDetail';
+
+// Store credentials for API requests
+let xtreamCredentials = { url: '', user: '', pass: '' };
+
+// Axios interceptor to add Xtream headers to every request
+axios.interceptors.request.use(config => {
+    // Do not add headers to the login request itself
+    if (config.url === '/api/login') {
+        return config;
+    }
+    config.headers['X-Xtream-URL'] = xtreamCredentials.url;
+    config.headers['X-Xtream-User'] = xtreamCredentials.user;
+    config.headers['X-Xtream-Pass'] = xtreamCredentials.pass;
+    return config;
+}, error => {
+    return Promise.reject(error);
+});
+
 
 const App: React.FC = () => {
-  // Auth State
+  // Auth & View State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  
-  // Navigation State
-  const [view, setView] = useState<'login' | 'dashboard' | 'selector' | 'player'>('login');
-  
-  // Player Data State
-  const [playlistData, setPlaylistData] = useState<PlaylistData | null>(null);
-  const [currentChannel, setCurrentChannel] = useState<Channel | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // Global Loading State
-  const [loading, setLoading] = useState(true); // Start true to check for session
+  const [currentView, setCurrentView] = useState<ViewType>('live');
 
-  // Check for existing session on initial load
+  // State for all content types
+  const [liveCategories, setLiveCategories] = useState<Category[]>([]);
+  const [liveChannels, setLiveChannels] = useState<Channel[]>([]);
+  const [vodCategories, setVodCategories] = useState<Category[]>([]);
+  const [vodStreams, setVodStreams] = useState<VodStream[]>([]);
+  const [seriesCategories, setSeriesCategories] = useState<Category[]>([]);
+  const [seriesStreams, setSeriesStreams] = useState<SeriesStream[]>([]);
+  
+  // State for selected items
+  const [currentChannel, setCurrentChannel] = useState<Channel | null>(null);
+  const [currentMovie, setCurrentMovie] = useState<VodStream | null>(null);
+  const [currentSeries, setCurrentSeries] = useState<SeriesInfo | null>(null);
+  const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
+
+  // Global State
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isAutoLogin, setIsAutoLogin] = useState(true); // To control initial loading screen
+
+  // Auto-login on component mount
   useEffect(() => {
-    const user = storageService.getCurrentUser();
-    if (user) {
-      handleLoginSuccess(user);
+    const savedCreds = localStorage.getItem('credentials');
+    if (savedCreds) {
+      const { xtreamUrl, username, password } = JSON.parse(savedCreds);
+      handleLoginSuccess(null, { xtreamUrl, username, password }, false); // Attempt auto-login
     } else {
-      setLoading(false); // No user found, stop loading and show login
+      setIsAutoLogin(false);
     }
   }, []);
 
-  const handleLoginSuccess = (user: User) => {
-    setCurrentUser(user);
-    setLoading(false); // Once logged in, stop loading
-    if (user.role === 'admin') {
-      setView('dashboard');
+  const fetchDataForView = (view: ViewType) => {
+    setError(null);
+    if (view === 'live' && liveChannels.length === 0) fetchContent('live');
+    else if (view === 'movies' && vodStreams.length === 0) fetchContent('vod');
+    else if (view === 'series' && seriesStreams.length === 0) fetchContent('series');
+  };
+  
+  const fetchContent = useCallback(async (type: 'live' | 'vod' | 'series') => {
+    setLoading(true);
+    try {
+      const [cat, str] = await Promise.all([
+        axios.get(`/get.php`, { params: { action: `get_${type}_categories` } }),
+        axios.get(`/get.php`, { params: { action: `get_${type}_streams` } })
+      ]);
+      if (type === 'live') { setLiveCategories(cat.data || []); setLiveChannels(str.data || []); }
+      if (type === 'vod') { setVodCategories(cat.data || []); setVodStreams(str.data || []); }
+      if (type === 'series') { setSeriesCategories(cat.data || []); setSeriesStreams(str.data || []); }
+    } catch (err) {
+        handleFetchError(err, `${type} data`);
+    } finally { setLoading(false); }
+  }, []);
+
+  const fetchSeriesInfo = useCallback(async (seriesId: number) => {
+    setLoading(true);
+    try {
+        const res = await axios.get(`/get.php`, { params: { action: 'get_series_info', series_id: seriesId } });
+        setCurrentSeries(res.data);
+    } catch (err) { handleFetchError(err, 'series details'); } finally { setLoading(false); }
+  }, []);
+
+  const handleFetchError = (err: any, context: string) => {
+    console.error(`Error fetching ${context}:`, err);
+    setError(`Failed to load ${context}. Please check credentials and server status.`);
+    setLoading(false);
+  };
+
+  const handleLoginSuccess = async (userData: any, creds: any, isManualLogin = true) => {
+    xtreamCredentials = { url: creds.xtreamUrl, user: creds.username, pass: creds.password };
+    
+    if (isManualLogin) {
+      setCurrentUser(userData.user_info);
+      fetchDataForView('live');
     } else {
-      setView('selector');
+      // Auto-login: verify credentials silently
+      try {
+        const response = await axios.post('/api/login', creds);
+        setCurrentUser(response.data.user_info);
+        fetchDataForView('live');
+      } catch (error) {
+        console.error("Auto-login failed");
+        localStorage.removeItem('credentials'); // Clear invalid stored credentials
+        xtreamCredentials = { url: '', user: '', pass: '' }; // Clear in-memory credentials
+      } finally {
+        setIsAutoLogin(false);
+      }
     }
   };
 
   const handleLogout = () => {
-    storageService.logout();
+    localStorage.removeItem('credentials');
+    xtreamCredentials = { url: '', user: '', pass: '' };
     setCurrentUser(null);
-    setPlaylistData(null);
-    setCurrentChannel(null);
-    setView('login');
+    setCurrentView('live');
+    setLiveChannels([]); setVodStreams([]); setSeriesStreams([]);
+    resetSelections();
   };
 
-  // Loads a single playlist collection into the player
-  const handleLoadPlaylist = useCallback((storedPlaylist: StoredPlaylist) => {
-    setLoading(true);
-    // The parsing logic is client-side, a small timeout improves UX
-    setTimeout(() => {
-      try {
-        let mergedChannels: Channel[] = [];
-        const mergedGroups = new Set<string>();
-        
-        if (storedPlaylist.sources.length === 0) {
-            alert("This playlist has no M3U sources yet.");
-            setLoading(false);
-            return;
-        }
+  const resetSelections = () => { setCurrentChannel(null); setCurrentMovie(null); setCurrentSeries(null); setCurrentEpisode(null); };
+  const handleNavClick = (view: ViewType) => { resetSelections(); setCurrentView(view); fetchDataForView(view); };
+  const handleMovieSelect = (movie: VodStream) => setCurrentMovie(movie);
+  const handleSeriesSelect = (series: SeriesStream) => fetchSeriesInfo(series.series_id);
+  const handleEpisodePlay = (episode: Episode) => setCurrentEpisode(episode);
+  const handleBackToGrid = () => { resetSelections(); };
 
-        storedPlaylist.sources.forEach(source => {
-            try {
-                const data = parseM3U(source.content);
-                mergedChannels = [...mergedChannels, ...data.channels];
-                data.groups.forEach(g => mergedGroups.add(g));
-            } catch (err) {
-                console.error(`Error parsing source: ${source.identifier}`, err);
-            }
-        });
+  if (isAutoLogin) {
+      return <div className="h-screen bg-gray-900 flex items-center justify-center"><div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div></div>;
+  }
 
-        if (mergedChannels.length === 0) {
-             alert("No playable channels found in the playlist sources.");
-             setLoading(false);
-             return;
-        }
+  if (!currentUser) return <Login onLogin={handleLoginSuccess} />;
 
-        setPlaylistData({ channels: mergedChannels, groups: Array.from(mergedGroups).sort() });
-        if (mergedChannels.length > 0) {
-          setCurrentChannel(mergedChannels[0]);
-        }
-        setView('player');
-      } catch (e) {
-        console.error("Error processing playlist:", e);
-        alert("Failed to load playlist.");
-      } finally {
-        setLoading(false);
-      }
-    }, 100);
-  }, []);
-
-  // Fetches ALL playlists from the server and merges them
-  const handleLoadAllPlaylists = useCallback(async () => {
-    setLoading(true);
-    try {
-        const allPlaylists = await storageService.getPlaylists(); // Async call
-        let mergedChannels: Channel[] = [];
-        const mergedGroups = new Set<string>();
-
-        allPlaylists.forEach(pl => {
-            pl.sources.forEach(source => {
-                try {
-                    const data = parseM3U(source.content);
-                    mergedChannels = [...mergedChannels, ...data.channels];
-                    data.groups.forEach(g => mergedGroups.add(g));
-                } catch (e) {
-                    console.warn(`Could not parse source ${source.identifier}:`, e);
-                }
-            });
-        });
-
-        if (mergedChannels.length === 0) {
-            alert("No channels found across all playlists.");
-            return;
-        }
-
-        setPlaylistData({ channels: mergedChannels, groups: Array.from(mergedGroups).sort() });
-        setCurrentChannel(mergedChannels[0]);
-        setView('player');
-
-    } catch (e: any) {
-        console.error("Failed to load all playlists:", e);
-        alert(`Error loading all playlists: ${e.message}`);
-    } finally {
-        setLoading(false);
+  const renderContent = () => {
+    if (loading && !currentSeries && liveChannels.length === 0 && vodStreams.length === 0 && seriesStreams.length === 0) {
+        return <div className="flex-1 flex items-center justify-center"><div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div></div>;
     }
-  }, []);
+    if (error) return <div className="flex-1 flex items-center justify-center"><div className="text-center text-red-400"><p>{error}</p><button onClick={handleLogout}>Logout</button></div></div>;
 
-  const handleChannelSelect = (channel: Channel) => {
-    setCurrentChannel(channel);
-    setMobileMenuOpen(false);
-  };
+    const videoUrl = currentEpisode ? `/series/${currentEpisode.id}.${currentEpisode.container_extension}`
+                   : currentMovie ? `/movie/${currentMovie.stream_id}.${currentMovie.container_extension}`
+                   : currentChannel ? `/live/${currentChannel.stream_id}.ts` : null;
+    const videoPoster = currentEpisode?.info.movie_image || currentMovie?.stream_icon || currentChannel?.stream_icon;
 
-  const handleBackToMenu = () => {
-      setView(currentUser?.role === 'admin' ? 'dashboard' : 'selector');
-      setPlaylistData(null);
-      setCurrentChannel(null);
-  };
+    if (currentEpisode) {
+        return <div className="flex-1 bg-black"><VideoPlayer url={videoUrl!} poster={videoPoster} onBack={() => setCurrentEpisode(null)} backButtonText={`Back to ${currentSeries?.info.name}`} /></div>
+    }
+    if (currentMovie) {
+        return <div className="flex-1 bg-black"><VideoPlayer url={videoUrl!} poster={videoPoster} onBack={handleBackToGrid} backButtonText="Back to Movies" /></div>
+    }
 
-  // --- RENDER LOGIC ---
-
-  if (loading) {
-      return (
-          <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white">
-              <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p>Loading Application...</p>
-          </div>
-      );
+    switch (currentView) {
+      case 'live':
+        return <div className="flex flex-1 overflow-hidden"><Sidebar c={liveChannels} cat={liveCategories} cur={currentChannel} onSel={setCurrentChannel} /><div className="flex-1 flex flex-col"><div className="h-14 bg-gray-900/80 flex items-center px-6 shrink-0 border-b border-gray-700"><h2 className="text-lg font-semibold truncate">{currentChannel?.name || 'Select Channel'}</h2></div><div className="flex-1 bg-black">{currentChannel && <VideoPlayer url={videoUrl!} poster={videoPoster} />}</div></div></div>;
+      case 'movies':
+        return <MoviesGrid movies={vodStreams} categories={vodCategories} onMovieSelect={handleMovieSelect} />;
+      case 'series':
+        if (loading && !currentSeries) return <div className="flex-1 flex items-center justify-center"><div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div></div>;
+        if (currentSeries) return <SeriesDetail seriesInfo={currentSeries} onPlayEpisode={handleEpisodePlay} onBack={handleBackToGrid} />;
+        return <SeriesGrid series={seriesStreams} categories={seriesCategories} onSeriesSelect={handleSeriesSelect} />;
+      default: return null;
+    }
   }
 
-  if (!currentUser || view === 'login') {
-    return <Login onLogin={handleLoginSuccess} />;
-  }
-
-  if (view === 'dashboard' && currentUser.role === 'admin') {
-    return <AdminDashboard onLogout={handleLogout} onPreview={handleLoadPlaylist} />;
-  }
-
-  if (view === 'selector') {
-      return (
-          <PlaylistSelector 
-            onSelect={handleLoadPlaylist}
-            onSelectAll={handleLoadAllPlaylists}
-            onLogout={handleLogout}
-            isAdmin={currentUser.role === 'admin'}
-          />
-      );
-  }
-
-  if (view === 'player' && playlistData) {
-    return (
-      <div className="flex flex-col h-screen bg-black overflow-hidden relative">
-        <div className="md:hidden bg-gray-900 p-4 border-b border-gray-700 flex justify-between items-center z-50">
-          <div className="font-bold text-red-500 flex items-center gap-2"><i className="fas fa-play-circle"></i> StreamFlow</div>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white p-2">
-              <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
-          </button>
-        </div>
-        <div className="flex flex-1 overflow-hidden relative">
-          <div className={`absolute md:static inset-0 z-40 transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 flex`}>
-            <Sidebar 
-                channels={playlistData.channels} 
-                currentChannel={currentChannel}
-                onSelectChannel={handleChannelSelect}
-                groups={playlistData.groups}
-            />
-          </div>
-          <div className="flex-1 flex flex-col w-full h-full relative">
-            <div className="h-14 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between px-6 shrink-0">
-              <div className="flex items-center gap-3 overflow-hidden">
-                {currentChannel?.logo && <img src={currentChannel.logo} className="h-8 w-8 object-contain rounded" alt="" />}
-                <h2 className="text-lg font-semibold truncate text-white">{currentChannel?.name || 'Select a Channel'}</h2>
-              </div>
-              <button onClick={handleBackToMenu} className="text-sm text-gray-400 hover:text-white flex items-center gap-2 px-3 py-1 rounded hover:bg-gray-800 transition-colors">
-                <i className="fas fa-arrow-left"></i>
-                <span className="hidden sm:inline">Back to Menu</span>
-              </button>
-            </div>
-            <div className="flex-1 bg-black relative">
-              {currentChannel ? <VideoPlayer url={currentChannel.url} poster={currentChannel.logo} /> : <div className="h-full flex items-center justify-center text-gray-500"><div className="text-center"><i className="fas fa-tv text-6xl mb-4 opacity-50"></i><p>Select a channel to start watching</p></div></div>}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return <div className="text-white p-10">An unexpected error occurred. Please reload.</div>;
+  return (
+    <div className="flex flex-col h-screen bg-gray-900 text-white">
+      <AppHeader user={currentUser} currentView={currentView} onNavClick={handleNavClick} onLogout={handleLogout} />
+      {renderContent()}
+    </div>
+  );
 };
 
 export default App;

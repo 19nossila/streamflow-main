@@ -1,167 +1,128 @@
 
 import express from 'express';
 import cors from 'cors';
-import bodyParser from 'body-parser';
-import sqlite3 from 'sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Set up __dirname for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import rateLimit from 'express-rate-limit';
+import axios from 'axios';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(cors());
+// --- Middleware ---
 
-// Increase the limit for JSON and URL-encoded bodies
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+app.use(cors()); // Enable CORS for all routes
+app.use(express.json()); // Modern replacement for body-parser
 
-// Database setup - Use a specific path and a direct constructor
-const dbPath = path.resolve(__dirname, 'database.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error("[SERVER ERROR] Could not connect to database:", err.message);
-  } else {
-    console.log("[SERVER] Connected to the SQLite database.");
-
-    // Serialize execution to ensure tables are created in order
-    db.serialize(() => {
-        // Create tables
-        db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT)`, (err) => {
-            if(err) console.error("Error creating users table:", err.message);
-        });
-        db.run(`CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)`, (err) => {
-            if(err) console.error("Error creating playlists table:", err.message);
-        });
-        db.run(`CREATE TABLE IF NOT EXISTS playlist_sources (id INTEGER PRIMARY KEY AUTOINCREMENT, playlist_id INTEGER, type TEXT, content TEXT, identifier TEXT, addedAt TEXT, FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE)`, (err) => {
-            if(err) console.error("Error creating playlist_sources table:", err.message);
-        });
-
-        // Add a default admin user if no users exist
-        db.get("SELECT * FROM users LIMIT 1", [], (err, row) => {
-            if (err) {
-                console.error("[SERVER ERROR] Error checking for users:", err.message);
-                return;
-            }
-            if (!row) {
-                console.log("[SERVER] No users found. Creating default admin user (admin/admin).");
-                db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', 'admin', 'admin'], function(err) {
-                    if (err) {
-                        console.error("[SERVER ERROR] Error creating default admin user:", err.message);
-                    } else {
-                        console.log(`[SERVER] Default admin user created successfully.`);
-                    }
-                });
-            }
-        });
-    });
-  }
+// Rate Limiter for the login endpoint to prevent brute-force attacks
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, 
+  message: 'Too many login attempts, please try again after 15 minutes',
 });
+
 
 // --- API Routes ---
 
-// Auth
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-    db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, user) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (user) {
-            res.json(user);
-        } else {
-            res.status(401).json({ error: 'Invalid credentials' });
-        }
+// 1. LOGIN ENDPOINT
+// Validates user credentials against the Xtream Codes API.
+app.post('/api/login', loginLimiter, async (req, res) => {
+  const { xtreamUrl, username, password } = req.body;
+
+  if (!xtreamUrl || !username || !password) {
+    return res.status(400).json({ message: 'Server URL, Username, and Password are required.' });
+  }
+
+  try {
+    const fullXtreamUrl = `${xtreamUrl}/player_api.php`;
+    const response = await axios.post(fullXtreamUrl, new URLSearchParams({ username, password }), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
+
+    if (response.data.user_info && response.data.user_info.auth === 1) {
+      // Authentication successful
+      // We also replace the server url in the response to point to our proxy
+      const proxyUrl = `${req.protocol}://${req.get('host')}`;
+      response.data.server_info.url = proxyUrl;
+      response.data.server_info.port = "";
+      response.data.server_info.https_port = "";
+      res.json(response.data);
+    } else {
+      // Authentication failed
+      res.status(401).json({ message: 'Invalid credentials or server error.' });
+    }
+  } catch (error) {
+    console.error('Login error:', error.message);
+    res.status(502).json({ message: 'Could not connect to the IPTV server.' });
+  }
 });
 
-// Users
-app.get('/api/users', (req, res) => {
-  db.all('SELECT id, username, role FROM users', [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
-});
 
-app.post('/api/users', (req, res) => {
-  const { username, password, role } = req.body;
-  db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', [username, password, role], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ id: this.lastID, username, role });
-  });
-});
+// --- PROXY ROUTES ---
+// These routes forward requests to the Xtream server, adding credentials from headers.
 
-app.put('/api/users/:userId/password', (req, res) => {
-  const { userId } = req.params;
-  const { newPassword } = req.body;
-  db.run('UPDATE users SET password = ? WHERE id = ?', [newPassword, userId], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: 'Password updated' });
-  });
-});
+const proxyMiddleware = async (req, res, next) => {
+    req.xtream = {
+        url: req.headers['x-xtream-url'],
+        user: req.headers['x-xtream-user'],
+        pass: req.headers['x-xtream-pass'],
+    };
 
-app.delete('/api/users/:userId', (req, res) => {
-  const { userId } = req.params;
-  db.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(204).send();
-  });
-});
+    if (!req.xtream.url || !req.xtream.user || !req.xtream.pass) {
+        return res.status(401).send('Missing Xtream credentials in request headers.');
+    }
+    next();
+};
 
-// Playlists
-app.get('/api/playlists', (req, res) => {
-  db.all('SELECT * FROM playlists', [], (err, playlists) => {
-    if (err) return res.status(500).json({ error: err.message });
-    const promises = playlists.map(p => 
-      new Promise((resolve, reject) => {
-        db.all('SELECT * FROM playlist_sources WHERE playlist_id = ?', [p.id], (err, sources) => {
-          if (err) return reject(err);
-          resolve({ ...p, sources: sources || [] });
+// 2. PROXY FOR METADATA (get.php)
+app.get('/get.php', proxyMiddleware, async (req, res) => {
+    const { url, user, pass } = req.xtream;
+    try {
+        const response = await axios({
+            method: 'get',
+            url: `${url}/get.php`,
+            params: { ...req.query, username: user, password: pass },
+            responseType: 'stream'
         });
-      })
-    );
-    Promise.all(promises).then(results => res.json(results)).catch(err => res.status(500).json({ error: err.message }));
-  });
+        res.set(response.headers);
+        response.data.pipe(res);
+    } catch (error) {
+        console.error('Get.php proxy error:', error.message);
+        res.status(502).send('Error fetching data from upstream server.');
+    }
 });
 
-app.post('/api/playlists', (req, res) => {
-  const { name } = req.body;
-  db.run('INSERT INTO playlists (name) VALUES (?)', [name], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ id: this.lastID, name, sources: [] });
-  });
-});
+// 3. PROXY FOR STREAMS (Live, Movie, Series)
+const streamProxyHandler = async (req, res) => {
+    const { url, user, pass } = req.xtream;
+    const { type, streamId, extension } = req.params;
+    
+    // Ensure type is one of the allowed values
+    if (!['live', 'movie', 'series'].includes(type)) {
+        return res.status(400).send('Invalid stream type.');
+    }
 
-app.delete('/api/playlists/:playlistId', (req, res) => {
-  const { playlistId } = req.params;
-  db.run('DELETE FROM playlists WHERE id = ?', [playlistId], function(err){
-      if (err) return res.status(500).json({ error: err.message });
-      res.status(204).send();
-  });
-});
+    const fullStreamUrl = `${url}/${type}/${user}/${pass}/${streamId}.${extension}`;
 
-// Sources
-app.post('/api/playlists/:playlistId/sources', (req, res) => {
-  const { playlistId } = req.params;
-  const { type, content, identifier } = req.body;
-  const addedAt = new Date().toISOString();
-  db.run('INSERT INTO playlist_sources (playlist_id, type, content, identifier, addedAt) VALUES (?, ?, ?, ?, ?)', [playlistId, type, content, identifier, addedAt], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ id: this.lastID, playlist_id: parseInt(playlistId), type, content, identifier, addedAt });
-  });
-});
+    try {
+        const response = await axios({
+            method: 'get',
+            url: fullStreamUrl,
+            responseType: 'stream',
+        });
+        res.set(response.headers);
+        response.data.pipe(res);
+    } catch (error) { 
+        // Don't log 'not found' errors which happen often with streams
+        if (error.response?.status !== 404) {
+            console.error('Stream proxy error:', error.message);
+        }
+        res.status(error.response?.status || 502).send('Error fetching stream from upstream server.');
+    }
+};
 
-app.delete('/api/playlists/:playlistId/sources/:sourceId', (req, res) => {
-  const { sourceId } = req.params;
-  db.run('DELETE FROM playlist_sources WHERE id = ?', [sourceId], function(err){
-      if (err) return res.status(500).json({ error: err.message });
-      res.status(204).send();
-  });
-});
+app.get('/:type/:streamId.:extension', proxyMiddleware, streamProxyHandler);
 
 
+// --- Server Start ---
 app.listen(PORT, () => {
-  console.log(`[SERVER] Server is running on http://localhost:${PORT}`);
+  console.log(`[SERVER] Simplified proxy server is running on http://localhost:${PORT}`);
 });
