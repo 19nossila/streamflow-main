@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, 'dist')));
 
 
 // Database setup - Use Render's persistent disk path if available
-const dbPath = process.env.RENDER_DISK_PATH ? path.join(process.env.RENDER_DISK_PATH, 'database.db') : path.resolve(__dirname, 'database.db');
+const dbPath = process.env.RENDER_DISK_PATH ? path.join(process.env.RENDER_DISK_PATH, 'database.v2.db') : path.resolve(__dirname, 'database.v2.db');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error("[SERVER ERROR] Could not connect to database:", err.message);
@@ -166,7 +166,6 @@ app.delete('/api/playlists/:playlistId/sources/:sourceId', (req, res) => {
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
-
 
 app.listen(PORT, () => {
   console.log(`[SERVER] Server is running on http://localhost:${PORT}`);
