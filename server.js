@@ -161,7 +161,15 @@ app.delete('/api/playlists/:playlistId/sources/:sourceId', (req, res) => {
   });
 });
 
+// Serve static files from the Vite build directory
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// Fallback to index.html for React Router / SPA
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
 
 app.listen(PORT, () => {
-  console.log(`[SERVER] Server is running on http://localhost:${PORT}`);
+  console.log(`[SERVER] Server is running on port ${PORT}`);
 });
