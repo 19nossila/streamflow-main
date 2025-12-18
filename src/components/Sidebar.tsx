@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { Channel } from '../types';
 
 const SidebarWrapper = styled.div`
   width: 280px;
@@ -9,6 +10,7 @@ const SidebarWrapper = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow-y: auto;
 `;
 
 const Logo = styled.div`
@@ -16,6 +18,10 @@ const Logo = styled.div`
   font-size: 24px;
   font-weight: bold;
   text-align: center;
+  background: #000;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 `;
 
 const NavList = styled.ul`
@@ -24,70 +30,92 @@ const NavList = styled.ul`
   margin: 0;
 `;
 
-const NavItem = styled.li`
+const GroupItem = styled.li`
   padding: 15px 20px;
   cursor: pointer;
   border-bottom: 1px solid #333;
+  font-weight: bold;
   &:hover {
     background: #333;
   }
 `;
 
-const SubNav = styled.ul`
+const ChannelList = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;
   background: #222;
 `;
 
-const SubNavItem = styled.li`
+const ChannelItem = styled.li<{
+  isActive: boolean
+}>`
   padding: 10px 30px;
   cursor: pointer;
+  background: ${props => props.isActive ? '#c9302c' : 'transparent'};
+  border-bottom: 1px solid #333;
+  font-size: 0.9em;
+
   &:hover {
     background: #444;
   }
 `;
 
-const Sidebar: React.FC = () => {
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
+const LoadingWrapper = styled.div`
+    padding: 20px;
+    text-align: center;
+`;
 
-  const handleMenuClick = (menu: string) => {
-    setOpenMenu(openMenu === menu ? null : menu);
+interface SidebarProps {
+  groups: string[];
+  channels: Channel[];
+  onChannelSelect: (channel: Channel) => void;
+  currentChannel: Channel | null;
+  loading: boolean;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ groups, channels, onChannelSelect, currentChannel, loading }) => {
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+
+  const handleGroupClick = (group: string) => {
+    setOpenGroup(openGroup === group ? null : group);
   };
+
+  if (loading) {
+      return (
+          <SidebarWrapper>
+              <Logo>StreamFlow</Logo>
+              <LoadingWrapper>Loading channels...</LoadingWrapper>
+          </SidebarWrapper>
+      )
+  }
 
   return (
     <SidebarWrapper>
       <Logo>StreamFlow</Logo>
       <NavList>
-        <NavItem onClick={() => handleMenuClick('live')}>
-          Live Channels
-        </NavItem>
-        {openMenu === 'live' && (
-          <SubNav>
-            <SubNavItem>Search</SubNavItem>
-            <SubNavItem>TV Guide</SubNavItem>
-            <SubNavItem>Select Category</SubNavItem>
-          </SubNav>
-        )}
-        <NavItem onClick={() => handleMenuClick('movies')}>
-          Movies
-        </NavItem>
-        {openMenu === 'movies' && (
-          <SubNav>
-            <SubNavItem>Search</SubNavItem>
-            <SubNavItem>Select Category</SubNavItem>
-          </SubNav>
-        )}
-        <NavItem onClick={() => handleMenuClick('series')}>
-          TV Series
-        </NavItem>
-        {openMenu === 'series' && (
-          <SubNav>
-            <SubNavItem>Search</SubNavItem>
-            <SubNavItem>Select Category</SubNavItem>
-          </SubNav>
-        )}
-        <NavItem>Account Info</NavItem>
+        {groups.map(group => (
+          <React.Fragment key={group}>
+            <GroupItem onClick={() => handleGroupClick(group)}>
+              {group}
+            </GroupItem>
+            {openGroup === group && (
+              <ChannelList>
+                {channels
+                  .filter(channel => channel.group === group)
+                  .map(channel => (
+                    <ChannelItem 
+                      key={channel.id}
+                      isActive={currentChannel?.id === channel.id}
+                      onClick={() => onChannelSelect(channel)}
+                    >
+                      {channel.name}
+                    </ChannelItem>
+                  ))}
+              </ChannelList>
+            )}
+          </React.Fragment>
+        ))}
       </NavList>
     </SidebarWrapper>
   );

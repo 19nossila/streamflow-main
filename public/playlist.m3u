@@ -1,0 +1,3 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="test.channel" tvg-logo="https://i.imgur.com/p3VfTjD.png" group-title="Test Group",Test Channel
+https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8

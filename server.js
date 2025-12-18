@@ -15,33 +15,27 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
-
-// Increase the limit for JSON and URL-encoded bodies
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-// Database setup - Use a specific path and a direct constructor
-const dbPath = path.resolve(__dirname, 'database.db');
+// --- Production-Ready Static File Serving ---
+// Serve the static files from the Vite build directory
+app.use(express.static(path.join(__dirname, 'dist')));
+
+
+// Database setup - Use Render's persistent disk path if available
+const dbPath = process.env.RENDER_DISK_PATH ? path.join(process.env.RENDER_DISK_PATH, 'database.db') : path.resolve(__dirname, 'database.db');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error("[SERVER ERROR] Could not connect to database:", err.message);
   } else {
-    console.log("[SERVER] Connected to the SQLite database.");
+    console.log(`[SERVER] Connected to the SQLite database at ${dbPath}`);
 
-    // Serialize execution to ensure tables are created in order
     db.serialize(() => {
-        // Create tables
-        db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT)`, (err) => {
-            if(err) console.error("Error creating users table:", err.message);
-        });
-        db.run(`CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)`, (err) => {
-            if(err) console.error("Error creating playlists table:", err.message);
-        });
-        db.run(`CREATE TABLE IF NOT EXISTS playlist_sources (id INTEGER PRIMARY KEY AUTOINCREMENT, playlist_id INTEGER, type TEXT, content TEXT, identifier TEXT, addedAt TEXT, FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE)`, (err) => {
-            if(err) console.error("Error creating playlist_sources table:", err.message);
-        });
+        db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT)`);
+        db.run(`CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)`);
+        db.run(`CREATE TABLE IF NOT EXISTS playlist_sources (id INTEGER PRIMARY KEY AUTOINCREMENT, playlist_id INTEGER, type TEXT, content TEXT, identifier TEXT, addedAt TEXT, FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE)`);
 
-        // Add a default admin user if no users exist
         db.get("SELECT * FROM users LIMIT 1", [], (err, row) => {
             if (err) {
                 console.error("[SERVER ERROR] Error checking for users:", err.message);
@@ -49,13 +43,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
             }
             if (!row) {
                 console.log("[SERVER] No users found. Creating default admin user (admin/admin).");
-                db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', 'admin', 'admin'], function(err) {
-                    if (err) {
-                        console.error("[SERVER ERROR] Error creating default admin user:", err.message);
-                    } else {
-                        console.log(`[SERVER] Default admin user created successfully.`);
-                    }
-                });
+                db.run('INSERT INTO users (username, password, role) VALUES (?, ?, ?)', ['admin', 'admin', 'admin']);
             }
         });
     });
@@ -161,6 +149,13 @@ app.delete('/api/playlists/:playlistId/sources/:sourceId', (req, res) => {
   });
 });
 
+
+// --- Catch-all for SPA ---
+// For any request that doesn't match a static file or an API route,
+// send back the main index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 
 app.listen(PORT, () => {
   console.log(`[SERVER] Server is running on http://localhost:${PORT}`);

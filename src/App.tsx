@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Channel, PlaylistData, User, StoredPlaylist } from './types';
+import { Channel, PlaylistData, User } from './types';
 import { parseM3U } from './services/m3uParser';
 import { storageService } from './services/storage';
 import VideoPlayer from './components/VideoPlayer';
@@ -50,11 +50,16 @@ const App: React.FC = () => {
 
   const handleMenuSelect = (selectedView: 'live' | 'movies' | 'series') => {
     setView(selectedView);
-    // For now, we'll just load all playlists for any selection
     handleLoadAllPlaylists();
+  };
+  
+  const handleChannelSelect = (channel: Channel) => {
+    setCurrentChannel(channel);
   };
 
   const handleLoadAllPlaylists = useCallback(async () => {
+    if (!currentUser) return;
+
     setLoading(true);
     try {
         const allPlaylists = await storageService.getPlaylists();
@@ -62,24 +67,29 @@ const App: React.FC = () => {
         const mergedGroups = new Set<string>();
 
         allPlaylists.forEach(pl => {
-            pl.sources.forEach(source => {
-                try {
-                    const data = parseM3U(source.content);
-                    mergedChannels = [...mergedChannels, ...data.channels];
-                    data.groups.forEach(g => mergedGroups.add(g));
-                } catch (e) {
-                    console.warn(`Could not parse source ${source.identifier}:`, e);
-                }
-            });
+            // We only load playlists for the current user
+            if (pl.userId === currentUser.id) {
+                pl.sources.forEach(source => {
+                    try {
+                        const data = parseM3U(source.content);
+                        mergedChannels = [...mergedChannels, ...data.channels];
+                        data.groups.forEach(g => mergedGroups.add(g));
+                    } catch (e) {
+                        console.warn(`Could not parse source ${source.identifier}:`, e);
+                    }
+                });
+            }
         });
 
         if (mergedChannels.length === 0) {
-            alert("No channels found across all playlists.");
-            return;
+            console.warn("No channels found for the current user.");
         }
 
         setPlaylistData({ channels: mergedChannels, groups: Array.from(mergedGroups).sort() });
-        setCurrentChannel(mergedChannels[0]);
+        
+        if (mergedChannels.length > 0) {
+            setCurrentChannel(mergedChannels[0]);
+        }
 
     } catch (e: any) {
         console.error("Failed to load all playlists:", e);
@@ -87,11 +97,11 @@ const App: React.FC = () => {
     } finally {
         setLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   // --- RENDER LOGIC ---
 
-  if (loading) {
+  if (loading && !currentUser) {
       return (
           <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white">
               <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -105,20 +115,31 @@ const App: React.FC = () => {
   }
 
   if (view === 'main') {
-    return <MainMenu onSelect={handleMenuSelect} />;
+    return <MainMenu onSelect={handleMenuSelect} onLogout={handleLogout} />;
   }
 
   if (view === 'live' || view === 'movies' || view === 'series') {
     return (
-      <div style={{ display: 'flex', height: '100vh' }}>
-        <Sidebar />
+      <div style={{ display: 'flex', height: '100vh', background: '#1a1a1a' }}>
+        <Sidebar 
+          groups={playlistData?.groups || []}
+          channels={playlistData?.channels || []}
+          onChannelSelect={handleChannelSelect}
+          currentChannel={currentChannel}
+          loading={loading}
+        />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <Navbar />
+          <Navbar onLogout={handleLogout} />
           <div style={{ flex: 1, background: '#222', padding: '20px' }}>
-            {currentChannel ? (
+            {loading ? (
+               <div className="min-h-full flex flex-col items-center justify-center text-white">
+                    <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p>Loading Playlist...</p>
+                </div>
+            ) : currentChannel ? (
               <VideoPlayer url={currentChannel.url} poster={currentChannel.logo} />
             ) : (
-              <div>Select a channel to start watching</div>
+              <div className="text-white text-center">No channels found for the current user. Please upload a playlist.</div>
             )}
           </div>
         </div>

@@ -33,7 +33,24 @@ const NavItem = styled.a`
   }
 `;
 
-const Navbar: React.FC = () => {
+const LogoutButton = styled.button`
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 15px;
+
+    &:hover {
+        color: #f00;
+    }
+`;
+
+interface NavbarProps {
+  onLogout: () => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ onLogout }) => {
   return (
     <NavWrapper>
       <Logo>StreamFlow</Logo>
@@ -42,6 +59,7 @@ const Navbar: React.FC = () => {
         <NavItem>Search</NavItem>
         <NavItem>Categories</NavItem>
         <NavItem>Menu</NavItem>
+        <LogoutButton onClick={onLogout}>Logout</LogoutButton>
       </NavMenu>
     </NavWrapper>
   );
