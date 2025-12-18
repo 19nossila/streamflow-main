@@ -1,3 +1,4 @@
+
 import { User, StoredPlaylist, PlaylistSource } from '../types';
 import { apiService } from './api';
 
@@ -9,23 +10,18 @@ export const storageService = {
     try {
       const user = await apiService.login(username, password);
       if (user) {
-        // Store session info in localStorage for persistence across reloads
         localStorage.setItem(SESSION_KEY, JSON.stringify(user));
       }
       return user;
     } catch (error) {
       console.error('Login failed:', error);
-      // On failure, ensure session is cleared
       localStorage.removeItem(SESSION_KEY);
       return null;
     }
   },
 
   logout: () => {
-    // No need to await an API call if it's just removing local state
     localStorage.removeItem(SESSION_KEY);
-    // If you had a server-side session invalidation, you'd call it here:
-    // return apiService.logout(); 
   },
 
   getCurrentUser: (): User | null => {
@@ -55,8 +51,8 @@ export const storageService = {
     return apiService.getPlaylists();
   },
 
-  createPlaylist: (name: string): Promise<StoredPlaylist> => {
-    return apiService.createPlaylist(name);
+  createPlaylist: (name: string, userId: number | string): Promise<StoredPlaylist> => {
+    return apiService.createPlaylist(name, userId);
   },
 
   deletePlaylist: (id: string | number): Promise<void> => {
@@ -72,14 +68,12 @@ export const storageService = {
     return apiService.removeSourceFromPlaylist(playlistId, sourceId);
   },
 
-  // --- Sync / Backup (These would need server-side implementation if you want true sync) ---
+  // --- Sync / Backup ---
   exportData: (): Promise<string> => {
-    // This is a placeholder. A real implementation would fetch from a server endpoint.
     return Promise.reject(new Error('Export via server not implemented'));
   },
 
   importData: (jsonString: string): Promise<void> => {
-    // This is a placeholder. A real implementation would post to a server endpoint.
     return Promise.reject(new Error('Import via server not implemented'));
   }
 };

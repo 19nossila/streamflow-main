@@ -19,7 +19,6 @@ app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 // --- Production-Ready Static File Serving ---
-// Serve the static files from the Vite build directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
 
@@ -33,7 +32,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
     db.serialize(() => {
         db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT)`);
-        db.run(`CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)`);
+        db.run(`CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, userId INTEGER, FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE)`);
         db.run(`CREATE TABLE IF NOT EXISTS playlist_sources (id INTEGER PRIMARY KEY AUTOINCREMENT, playlist_id INTEGER, type TEXT, content TEXT, identifier TEXT, addedAt TEXT, FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE)`);
 
         db.get("SELECT * FROM users LIMIT 1", [], (err, row) => {
@@ -100,7 +99,7 @@ app.delete('/api/users/:userId', (req, res) => {
 
 // Playlists
 app.get('/api/playlists', (req, res) => {
-  db.all('SELECT * FROM playlists', [], (err, playlists) => {
+  db.all('SELECT id, name, userId FROM playlists', [], (err, playlists) => {
     if (err) return res.status(500).json({ error: err.message });
     const promises = playlists.map(p => 
       new Promise((resolve, reject) => {
@@ -115,10 +114,23 @@ app.get('/api/playlists', (req, res) => {
 });
 
 app.post('/api/playlists', (req, res) => {
-  const { name } = req.body;
-  db.run('INSERT INTO playlists (name) VALUES (?)', [name], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ id: this.lastID, name, sources: [] });
+  const { name, userId } = req.body;
+  if (!name || !userId) {
+      return res.status(400).json({ error: 'Playlist name and userId are required'});
+  }
+
+  // Security Check: Verify user is an admin
+  db.get('SELECT role FROM users WHERE id = ?', [userId], (err, user) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!user || user.role !== 'admin') {
+          return res.status(403).json({ error: 'Forbidden: Only admins can create playlists.' });
+      }
+
+      // Proceed with creating the playlist
+      db.run('INSERT INTO playlists (name, userId) VALUES (?, ?)', [name, userId], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json({ id: this.lastID, name, userId, sources: [] });
+      });
   });
 });
 
@@ -151,8 +163,6 @@ app.delete('/api/playlists/:playlistId/sources/:sourceId', (req, res) => {
 
 
 // --- Catch-all for SPA ---
-// For any request that doesn't match a static file or an API route,
-// send back the main index.html file.
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
