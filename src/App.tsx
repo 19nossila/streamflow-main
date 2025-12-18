@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar';
 import Login from './components/Login';
 import AdminDashboard from './components/AdminDashboard';
 import PlaylistSelector from './components/PlaylistSelector';
+import { Menu, X, ArrowLeft, LogOut, LayoutDashboard } from 'lucide-react';
 
 const App: React.FC = () => {
   // Auth State
@@ -21,21 +22,20 @@ const App: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Global Loading State
-  const [loading, setLoading] = useState(true); // Start true to check for session
+  const [loading, setLoading] = useState(true);
 
-  // Check for existing session on initial load
   useEffect(() => {
     const user = storageService.getCurrentUser();
     if (user) {
       handleLoginSuccess(user);
     } else {
-      setLoading(false); // No user found, stop loading and show login
+      setLoading(false);
     }
   }, []);
 
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
-    setLoading(false); // Once logged in, stop loading
+    setLoading(false);
     if (user.role === 'admin') {
       setView('dashboard');
     } else {
@@ -51,10 +51,8 @@ const App: React.FC = () => {
     setView('login');
   };
 
-  // Loads a single playlist collection into the player
   const handleLoadPlaylist = useCallback((storedPlaylist: StoredPlaylist) => {
     setLoading(true);
-    // The parsing logic is client-side, a small timeout improves UX
     setTimeout(() => {
       try {
         let mergedChannels: Channel[] = [];
@@ -77,7 +75,7 @@ const App: React.FC = () => {
         });
 
         if (mergedChannels.length === 0) {
-             alert("No playable channels found in the playlist sources.");
+             alert("No playable channels found.");
              setLoading(false);
              return;
         }
@@ -96,11 +94,10 @@ const App: React.FC = () => {
     }, 100);
   }, []);
 
-  // Fetches ALL playlists from the server and merges them
   const handleLoadAllPlaylists = useCallback(async () => {
     setLoading(true);
     try {
-        const allPlaylists = await storageService.getPlaylists(); // Async call
+        const allPlaylists = await storageService.getPlaylists();
         let mergedChannels: Channel[] = [];
         const mergedGroups = new Set<string>();
 
@@ -144,13 +141,11 @@ const App: React.FC = () => {
       setCurrentChannel(null);
   };
 
-  // --- RENDER LOGIC ---
-
   if (loading) {
       return (
-          <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white">
-              <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p>Loading Application...</p>
+          <div className="min-h-screen bg-[#0f1117] flex flex-col items-center justify-center text-white">
+              <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-6"></div>
+              <p className="text-gray-400 font-medium tracking-widest uppercase text-xs">Initializing StreamFlow</p>
           </div>
       );
   }
@@ -176,35 +171,96 @@ const App: React.FC = () => {
 
   if (view === 'player' && playlistData) {
     return (
-      <div className="flex flex-col h-screen bg-black overflow-hidden relative">
-        <div className="md:hidden bg-gray-900 p-4 border-b border-gray-700 flex justify-between items-center z-50">
-          <div className="font-bold text-red-500 flex items-center gap-2"><i className="fas fa-play-circle"></i> StreamFlow</div>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-white p-2">
-              <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+      <div className="flex flex-col h-screen bg-[#07080a] overflow-hidden text-white font-sans">
+        {/* Mobile Header */}
+        <div className="md:hidden bg-[#0f1117] px-4 py-3 border-b border-white/5 flex justify-between items-center z-50 shadow-lg">
+          <div className="font-bold text-red-600 flex items-center gap-2 tracking-tighter text-lg">
+            STREAMFLOW
+          </div>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-400 p-1 hover:text-white transition-colors">
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
+
         <div className="flex flex-1 overflow-hidden relative">
-          <div className={`absolute md:static inset-0 z-40 transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 flex`}>
+          {/* Sidebar */}
+          <div className={`absolute md:static inset-0 z-40 transform transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 flex`}>
             <Sidebar 
                 channels={playlistData.channels} 
                 currentChannel={currentChannel}
                 onSelectChannel={handleChannelSelect}
                 groups={playlistData.groups}
             />
+            {/* Overlay for mobile when sidebar is open */}
+            {mobileMenuOpen && (
+              <div 
+                className="fixed inset-0 bg-black/60 md:hidden -z-10 backdrop-blur-sm"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+            )}
           </div>
+
+          {/* Main Content Area */}
           <div className="flex-1 flex flex-col w-full h-full relative">
-            <div className="h-14 bg-gray-900/90 border-b border-gray-800 flex items-center justify-between px-6 shrink-0">
-              <div className="flex items-center gap-3 overflow-hidden">
-                {currentChannel?.logo && <img src={currentChannel.logo} className="h-8 w-8 object-contain rounded" alt="" />}
-                <h2 className="text-lg font-semibold truncate text-white">{currentChannel?.name || 'Select a Channel'}</h2>
+            {/* Player Header */}
+            <div className="h-16 bg-[#0f1117]/80 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-6 shrink-0 z-10">
+              <div className="flex items-center gap-4 overflow-hidden">
+                {currentChannel?.logo && (
+                  <div className="w-10 h-10 bg-black/50 rounded-lg p-1 border border-white/10 shrink-0">
+                    <img src={currentChannel.logo} className="w-full h-full object-contain" alt="" />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <h2 className="text-base font-bold truncate leading-tight">{currentChannel?.name || 'Select a Channel'}</h2>
+                  {currentChannel?.group && (
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-0.5 truncate">{currentChannel.group}</p>
+                  )}
+                </div>
               </div>
-              <button onClick={handleBackToMenu} className="text-sm text-gray-400 hover:text-white flex items-center gap-2 px-3 py-1 rounded hover:bg-gray-800 transition-colors">
-                <i className="fas fa-arrow-left"></i>
-                <span className="hidden sm:inline">Back to Menu</span>
-              </button>
+              
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={handleBackToMenu} 
+                  className="p-2.5 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all group flex items-center gap-2"
+                  title="Back to Playlists"
+                >
+                  <ArrowLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
+                  <span className="hidden lg:inline text-xs font-bold uppercase tracking-wider">Back</span>
+                </button>
+                {currentUser.role === 'admin' && (
+                  <button 
+                    onClick={() => setView('dashboard')}
+                    className="p-2.5 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-all"
+                    title="Dashboard"
+                  >
+                    <LayoutDashboard size={20} />
+                  </button>
+                )}
+                <button 
+                  onClick={handleLogout}
+                  className="p-2.5 rounded-xl hover:bg-red-500/10 text-gray-400 hover:text-red-500 transition-all"
+                  title="Logout"
+                >
+                  <LogOut size={20} />
+                </button>
+              </div>
             </div>
-            <div className="flex-1 bg-black relative">
-              {currentChannel ? <VideoPlayer url={currentChannel.url} poster={currentChannel.logo} /> : <div className="h-full flex items-center justify-center text-gray-500"><div className="text-center"><i className="fas fa-tv text-6xl mb-4 opacity-50"></i><p>Select a channel to start watching</p></div></div>}
+
+            {/* Video Player Section */}
+            <div className="flex-1 bg-black relative flex items-center justify-center p-0 md:p-4 lg:p-6 overflow-hidden">
+              <div className="w-full h-full max-w-6xl mx-auto shadow-2xl shadow-red-900/10 rounded-xl overflow-hidden bg-black ring-1 ring-white/5">
+                {currentChannel ? (
+                  <VideoPlayer url={currentChannel.url} poster={currentChannel.logo} />
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-gray-600 bg-[#07080a]">
+                    <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6">
+                      <Tv size={48} className="opacity-20" />
+                    </div>
+                    <p className="text-lg font-medium">Ready to broadcast</p>
+                    <p className="text-sm opacity-50 mt-1 text-center max-w-xs px-4">Select a channel or movie from the sidebar to start your experience.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -212,7 +268,7 @@ const App: React.FC = () => {
     );
   }
 
-  return <div className="text-white p-10">An unexpected error occurred. Please reload.</div>;
+  return <div className="text-white p-10 bg-[#0f1117] min-h-screen">An unexpected error occurred. Please reload the application.</div>;
 };
 
 export default App;
