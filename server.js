@@ -54,7 +54,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 // Auth
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
-    db.get('SELECT * FROM users WHERE username = ? AND password = ?', [username, password], (err, user) => {
+    db.get('SELECT id, username, role FROM users WHERE username = ? AND password = ?', [username, password], (err, user) => {
         if (err) return res.status(500).json({ error: err.message });
         if (user) {
             res.json(user);
