@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
-import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
 import { Loader2, RefreshCw, ExternalLink, AlertCircle } from 'lucide-react';
+import Plyr from 'plyr';
 
 interface VideoPlayerProps {
   url: string;
