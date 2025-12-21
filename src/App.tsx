@@ -102,6 +102,7 @@ const App: React.FC = () => {
 
       setPlaylistData({ channels: mergedChannels, groups: Array.from(mergedGroups).sort() });
       setView('player');
+      
     } catch (e: any) {
       console.error("Failed to load all playlists:", e);
       alert(`Error loading all playlists: ${e.message}`);
