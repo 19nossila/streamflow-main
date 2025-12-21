@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Search, Star } from 'lucide-react';
+import { Search, Star, ArrowLeft } from 'lucide-react';
 
 interface SidebarProps {
   groups: string[];
@@ -9,6 +9,7 @@ interface SidebarProps {
   selectedGroup: string | null;
   setSelectedGroup: (group: string | null) => void;
   channelCount: number;
+  onBackToMenu: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -17,7 +18,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   setSearchQuery, 
   selectedGroup, 
   setSelectedGroup, 
-  channelCount 
+  channelCount, 
+  onBackToMenu
 }) => {
   return (
     <div className="w-full md:w-85 bg-[#0f1117] flex flex-col h-full border-r border-white/5 shadow-2xl">
@@ -25,9 +27,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Header */}
       <div className="p-5 pb-3 space-y-4 shrink-0 bg-[#0f1117]">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-red-500 to-red-800 bg-clip-text text-transparent">
-            STREAMFLOW
-          </h1>
+          <div className="flex items-center gap-3">
+            <button onClick={onBackToMenu} className="text-gray-400 hover:text-white transition-colors">
+                <ArrowLeft size={20} />
+            </button>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-red-500 to-red-800 bg-clip-text text-transparent">
+                STREAMFLOW
+            </h1>
+          </div>
           <div className="flex gap-2 text-gray-500">
             <Star size={16} className="hover:text-yellow-500 cursor-pointer transition-colors" />
           </div>

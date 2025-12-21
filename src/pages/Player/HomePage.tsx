@@ -101,6 +101,7 @@ const HomePage: React.FC<HomePageProps> = ({
             selectedGroup={selectedGroup}
             setSelectedGroup={setSelectedGroup}
             channelCount={filteredChannels.length}
+            onBackToMenu={onBackToMenu}
           />
         </div>
         {mobileMenuOpen && <div className="fixed inset-0 bg-black/60 md:hidden z-30" onClick={() => setMobileMenuOpen(false)} />} 
