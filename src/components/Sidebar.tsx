@@ -1,13 +1,18 @@
-import React, { useState, useMemo } from 'react';
+
+import React from 'react';
 import { Channel } from '../types';
 import { FixedSizeList } from 'react-window';
-import { Search, ChevronDown, Tv, Film, PlayCircle, Star } from 'lucide-react';
+import { Search, Tv, Film, PlayCircle, Star } from 'lucide-react';
 
 interface SidebarProps {
   channels: Channel[];
   groups: string[];
   currentChannel: Channel | null;
   onSelectChannel: (channel: Channel) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  selectedGroup: string | null;
+  setSelectedGroup: (group: string | null) => void;
 }
 
 const Row = ({ index, style, data }: { index: number, style: React.CSSProperties, data: any }) => {
@@ -15,7 +20,6 @@ const Row = ({ index, style, data }: { index: number, style: React.CSSProperties
     const channel = channels[index];
     const isSelected = currentChannel?.url === channel.url;
 
-    // Detect type based on group name
     const groupLower = channel.group?.toLowerCase() || '';
     const isMovie = groupLower.includes('movie') || groupLower.includes('filme');
     const isSeries = groupLower.includes('series') || groupLower.includes('serie');
@@ -66,23 +70,22 @@ const Row = ({ index, style, data }: { index: number, style: React.CSSProperties
 };
 
 
-const Sidebar: React.FC<SidebarProps> = ({ channels, groups, currentChannel, onSelectChannel }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState('All Categories');
-
-  const filteredChannels = useMemo(() => {
-    return channels.filter(channel => {
-      const matchesGroup = selectedGroup === 'All Categories' || channel.group === selectedGroup;
-      const matchesSearch = searchTerm === '' || channel.name.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesGroup && matchesSearch;
-    });
-  }, [channels, searchTerm, selectedGroup]);
+const Sidebar: React.FC<SidebarProps> = ({ 
+  channels, 
+  groups, 
+  currentChannel, 
+  onSelectChannel, 
+  searchQuery, 
+  setSearchQuery, 
+  selectedGroup, 
+  setSelectedGroup 
+}) => {
 
   return (
     <div className="w-full md:w-85 bg-[#0f1117] flex flex-col h-full border-r border-white/5 shadow-2xl">
       
       {/* Header */}
-      <div className="p-5 space-y-4 shrink-0 bg-[#0f1117]">
+      <div className="p-5 pb-3 space-y-4 shrink-0 bg-[#0f1117]">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-xl font-bold bg-gradient-to-r from-red-500 to-red-800 bg-clip-text text-transparent">
             STREAMFLOW
@@ -96,43 +99,45 @@ const Sidebar: React.FC<SidebarProps> = ({ channels, groups, currentChannel, onS
             <input 
                 type="text"
                 placeholder="Search content..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 outline-none transition-all placeholder:text-gray-600"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-red-500 transition-colors" size={18} />
         </div>
+      </div>
 
-        <div className="relative">
-            <select 
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 appearance-none focus:ring-2 focus:ring-red-500/50 outline-none cursor-pointer hover:bg-white/10 transition-all"
-            >
-                <option value="All Categories" className="bg-gray-900">All Content</option>
-                {groups.map(group => <option key={group} value={group} className="bg-gray-900">{group}</option>)}
-            </select>
-             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+      {/* Group Filters */}
+      <div className="px-5 pb-4 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2">
+          <button onClick={() => setSelectedGroup(null)} className={`px-4 py-2 text-xs font-bold rounded-full transition-all whitespace-nowrap ${!selectedGroup ? 'bg-red-600 text-white' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>
+            All
+          </button>
+          {groups.map(group => (
+            <button key={group} onClick={() => setSelectedGroup(group)} className={`px-4 py-2 text-xs font-bold rounded-full transition-all whitespace-nowrap ${selectedGroup === group ? 'bg-red-600 text-white' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}>
+              {group}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Stats */}
        <div className="px-5 py-2 text-[11px] text-gray-500 font-bold uppercase tracking-widest bg-black/20 border-y border-white/5 shrink-0 flex justify-between">
         <span>Channels</span>
-        <span className="text-red-500">{filteredChannels.length}</span>
+        <span className="text-red-500">{channels.length}</span>
       </div>
 
       {/* Channel List */}
       <div className="flex-1 overflow-hidden">
-        {filteredChannels.length > 0 ? (
+        {channels.length > 0 ? (
              <FixedSizeList
-                height={window.innerHeight - 250}
-                itemCount={filteredChannels.length}
+                height={window.innerHeight - 250} // Adjust height to account for new layout
+                itemCount={channels.length}
                 itemSize={76}
                 width="100%"
                 className="scrollbar-hide"
                 itemData={{
-                    channels: filteredChannels,
+                    channels: channels,
                     currentChannel,
                     onSelectChannel
                 }}
@@ -143,7 +148,7 @@ const Sidebar: React.FC<SidebarProps> = ({ channels, groups, currentChannel, onS
             <div className="flex flex-col items-center justify-center h-full p-8 text-center opacity-40">
                 <Search size={48} className="mb-4" />
                 <p className="text-sm font-medium">No results found</p>
-                <p className="text-xs mt-1">Try a different search term</p>
+                <p className="text-xs mt-1">Try a different search term or select another category</p>
             </div>
         )}
       </div>

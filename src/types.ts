@@ -33,3 +33,17 @@ export interface PlaylistData {
   channels: Channel[];
   groups: string[];
 }
+
+export interface EpgChannel {
+  id: string;
+  displayName: string;
+  icon: string | null;
+}
+
+export interface EpgProgram {
+  channelId: string;
+  title: string;
+  description: string | null;
+  startTime: Date;
+  endTime: Date;
+}

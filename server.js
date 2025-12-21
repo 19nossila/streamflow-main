@@ -40,6 +40,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
         db.run(`CREATE TABLE IF NOT EXISTS playlist_sources (id INTEGER PRIMARY KEY AUTOINCREMENT, playlist_id INTEGER, type TEXT, content TEXT, identifier TEXT, addedAt TEXT, FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE)`, (err) => {
             if(err) console.error("Error creating playlist_sources table:", err.message);
         });
+        db.run(`CREATE TABLE IF NOT EXISTS epg_channels (id TEXT PRIMARY KEY, displayName TEXT, icon TEXT)`, (err) => {
+            if(err) console.error("Error creating epg_channels table:", err.message);
+        });
+        db.run(`CREATE TABLE IF NOT EXISTS epg_programs (channelId TEXT, title TEXT, description TEXT, startTime TEXT, endTime TEXT, PRIMARY KEY (channelId, startTime))`, (err) => {
+            if(err) console.error("Error creating epg_programs table:", err.message);
+        });
 
         // Add a default admin user if no users exist
         db.get("SELECT * FROM users LIMIT 1", [], (err, row) => {
@@ -159,6 +165,38 @@ app.delete('/api/playlists/:playlistId/sources/:sourceId', (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       res.status(204).send();
   });
+});
+
+// EPG Routes
+app.post('/api/epg', (req, res) => {
+    const { channels, programs } = req.body;
+
+    db.serialize(() => {
+        db.run('DELETE FROM epg_channels');
+        db.run('DELETE FROM epg_programs');
+
+        const channelStmt = db.prepare('INSERT INTO epg_channels (id, displayName, icon) VALUES (?, ?, ?)');
+        for (const channel of channels) {
+            channelStmt.run(channel.id, channel.displayName, channel.icon);
+        }
+        channelStmt.finalize();
+
+        const programStmt = db.prepare('INSERT INTO epg_programs (channelId, title, description, startTime, endTime) VALUES (?, ?, ?, ?, ?)');
+        for (const program of programs) {
+            programStmt.run(program.channelId, program.title, program.description, program.startTime, program.endTime);
+        }
+        programStmt.finalize();
+
+        res.status(201).json({ message: 'EPG data imported successfully' });
+    });
+});
+
+app.get('/api/epg/channels/:channelId/programs', (req, res) => {
+    const { channelId } = req.params;
+    db.all('SELECT * FROM epg_programs WHERE channelId = ? ORDER BY startTime', [channelId], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows.map(r => ({...r, startTime: new Date(r.startTime), endTime: new Date(r.endTime)})));
+    });
 });
 
 // Serve static files from the Vite build directory

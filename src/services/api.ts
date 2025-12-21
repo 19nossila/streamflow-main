@@ -1,4 +1,4 @@
-import { User, StoredPlaylist, PlaylistSource } from '../types';
+import { User, StoredPlaylist, PlaylistSource, EpgChannel, EpgProgram } from '../types';
 
 // Detect if we are in production based on hostname
 const IS_PROD = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
@@ -95,5 +95,17 @@ export const apiService = {
     return fetchApi(`/api/playlists/${playlistId}/sources/${sourceId}`, {
       method: 'DELETE',
     });
+  },
+
+  // --- EPG ---
+  saveEpgData: (channels: EpgChannel[], programs: EpgProgram[]): Promise<void> => {
+    return fetchApi('/api/epg', {
+      method: 'POST',
+      body: JSON.stringify({ channels, programs }),
+    });
+  },
+
+  getProgramsForChannel: (channelId: string): Promise<EpgProgram[]> => {
+    return fetchApi(`/api/epg/channels/${channelId}/programs`);
   },
 };
