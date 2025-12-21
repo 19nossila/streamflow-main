@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, f
 import Hls from 'hls.js';
 import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
-import { Loader2, RefreshCw, X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 
 // --- Types --- //
 interface VideoPlayerProps {
@@ -50,26 +50,22 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, onCl
     const video = videoRef.current;
     if (!video) return;
 
-    // Reset state for new URL
     cleanup();
     setIsLoading(true);
     setUseProxy(false);
     
     const sourceUrl = useProxy ? getProxyUrl(url) : url;
 
-    // Initialize Plyr
     const plyr = new Plyr(video, { 
         autoplay: autoPlay,
         controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
         settings: ['quality', 'speed'],
-        quality: { default: 0, options: [0], forced: true }, // Start with auto
+        quality: { default: 0, options: [0], forced: true },
     });
     playerRef.current = plyr;
 
-    // --- HLS.js Integration --- //
     if (url.includes('.m3u8') && Hls.isSupported()) {
       const hls = new Hls({
-        // Configs for better performance
         lowLatencyMode: true,
         backBufferLength: 90, 
       });
@@ -79,7 +75,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, onCl
 
       hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
         const availableQualities = [0, ...data.levels.map(l => l.height).filter(Boolean)];
-        plyr.config.quality.options = [...new Set(availableQualities)];
+        (plyr as any).config.quality.options = [...new Set(availableQualities)];
       });
 
       hls.on(Hls.Events.ERROR, (event, data) => {
@@ -87,9 +83,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, onCl
           console.error('HLS Error:', data);
           if (data.type === Hls.ErrorTypes.NETWORK_ERROR && !useProxy) {
             console.warn('Network error, trying proxy...');
-            setUseProxy(true); // Retry with proxy
+            setUseProxy(true);
           } else {
-            onClose(); // Failsafe
+            onClose();
           }
         }
       });
@@ -97,7 +93,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, onCl
       video.src = sourceUrl;
     }
 
-    // --- Plyr Event Listeners --- //
     plyr.on('ready', () => {
         if (autoPlay) {
             plyr.play();
@@ -113,7 +108,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, onCl
 
   return (
     <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center">
-      {/* --- Close Button --- */}
       <button 
         onClick={onClose}
         className="absolute top-5 right-5 z-50 p-2 bg-black/50 rounded-full hover:bg-red-600 transition-all scale-125"
@@ -121,22 +115,19 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, onCl
         <X size={24} className="text-white" />
       </button>
 
-      {/* --- Loading Spinner --- */}
       {isLoading && (
         <div className="absolute z-20 flex items-center justify-center">
           <Loader2 className="w-16 h-16 text-white animate-spin" />
         </div>
       )}
       
-      {/* --- Video Element --- */}
       <div className="w-full h-full">
         <video ref={videoRef} className="w-full h-full" poster={poster || undefined} playsInline />
       </div>
 
-      {/* --- Player Style Overrides --- */}
       <style>{`
         .plyr {
-          --plyr-color-main: #e50914; /* Netflix Red */
+          --plyr-color-main: #e50914;
           height: 100%;
           width: 100%;
         }
