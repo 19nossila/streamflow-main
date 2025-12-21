@@ -1,18 +1,24 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Channel, PlaylistData, User, StoredPlaylist } from './types';
+import { PlaylistData, User, StoredPlaylist, ContentItem, Series, Episode, LiveChannel, Movie } from './types';
 import { parseM3U } from './services/m3uParser';
 import { storageService } from './services/storage';
 import Login from './components/Login';
 import AdminDashboard from './components/AdminDashboard';
 import PlaylistSelector from './components/PlaylistSelector';
 import HomePage from './pages/Player/HomePage';
+import SeriesDetailPage from './pages/Player/SeriesDetailPage';
+import VideoPlayer from './components/VideoPlayer';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [view, setView] = useState<'login' | 'dashboard' | 'selector' | 'player'>('login');
   const [playlistData, setPlaylistData] = useState<PlaylistData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // State for navigation within the 'player' view
+  const [selectedSeries, setSelectedSeries] = useState<Series | null>(null);
+  const [itemToPlay, setItemToPlay] = useState<LiveChannel | Movie | Episode | null>(null);
 
   useEffect(() => {
     const user = storageService.getCurrentUser();
@@ -33,14 +39,16 @@ const App: React.FC = () => {
     storageService.logout();
     setCurrentUser(null);
     setPlaylistData(null);
+    setSelectedSeries(null);
+    setItemToPlay(null);
     setView('login');
   };
 
   const handleLoadPlaylist = useCallback((storedPlaylist: StoredPlaylist) => {
     setLoading(true);
-    setTimeout(() => {
+    setTimeout(() => { 
       try {
-        let mergedChannels: Channel[] = [];
+        let mergedItems: ContentItem[] = [];
         const mergedGroups = new Set<string>();
 
         if (storedPlaylist.sources.length === 0) {
@@ -52,20 +60,20 @@ const App: React.FC = () => {
         storedPlaylist.sources.forEach(source => {
           try {
             const data = parseM3U(source.content);
-            mergedChannels = [...mergedChannels, ...data.channels];
+            mergedItems = [...mergedItems, ...data.items];
             data.groups.forEach(g => mergedGroups.add(g));
           } catch (err) {
             console.error(`Error parsing source: ${source.identifier}`, err);
           }
         });
 
-        if (mergedChannels.length === 0) {
-          alert("No playable channels found.");
+        if (mergedItems.length === 0) {
+          alert("No playable content found.");
           setLoading(false);
           return;
         }
 
-        setPlaylistData({ channels: mergedChannels, groups: Array.from(mergedGroups).sort() });
+        setPlaylistData({ items: mergedItems, groups: Array.from(mergedGroups).sort() });
         setView('player');
       } catch (e) {
         console.error("Error processing playlist:", e);
@@ -80,14 +88,14 @@ const App: React.FC = () => {
     setLoading(true);
     try {
       const allPlaylists = await storageService.getPlaylists();
-      let mergedChannels: Channel[] = [];
+      let mergedItems: ContentItem[] = [];
       const mergedGroups = new Set<string>();
 
       allPlaylists.forEach(pl => {
         pl.sources.forEach(source => {
           try {
             const data = parseM3U(source.content);
-            mergedChannels = [...mergedChannels, ...data.channels];
+            mergedItems = [...mergedItems, ...data.items];
             data.groups.forEach(g => mergedGroups.add(g));
           } catch (e) {
             console.warn(`Could not parse source ${source.identifier}:`, e);
@@ -95,12 +103,12 @@ const App: React.FC = () => {
         });
       });
 
-      if (mergedChannels.length === 0) {
-        alert("No channels found across all playlists.");
+      if (mergedItems.length === 0) {
+        alert("No content found across all playlists.");
         return;
       }
 
-      setPlaylistData({ channels: mergedChannels, groups: Array.from(mergedGroups).sort() });
+      setPlaylistData({ items: mergedItems, groups: Array.from(mergedGroups).sort() });
       setView('player');
       
     } catch (e: any) {
@@ -110,10 +118,32 @@ const App: React.FC = () => {
       setLoading(false);
     }
   }, []);
+  
+  const handleSelectItem = (item: ContentItem) => {
+    if (item.type === 'series') {
+      setSelectedSeries(item);
+    } else {
+      setItemToPlay(item);
+    }
+  };
 
+  const handlePlayEpisode = (episode: Episode) => {
+    setItemToPlay(episode);
+  };
+  
+  const handleBackToGrid = () => {
+    setSelectedSeries(null);
+  };
+  
+  const handleClosePlayer = () => {
+    setItemToPlay(null);
+  };
+  
   const handleBackToMenu = () => {
     setView(currentUser?.role === 'admin' ? 'dashboard' : 'selector');
     setPlaylistData(null);
+    setSelectedSeries(null);
+    setItemToPlay(null);
   };
 
   if (loading) {
@@ -122,6 +152,32 @@ const App: React.FC = () => {
         <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-6"></div>
         <p className="text-gray-400 font-medium tracking-widest uppercase text-xs">Initializing StreamFlow</p>
       </div>
+    );
+  }
+
+  const renderPlayerView = () => {
+    if (!playlistData || !currentUser) {
+        setView('selector');
+        return null;
+    }
+
+    if (itemToPlay) {
+        return <VideoPlayer url={itemToPlay.url} onClose={handleClosePlayer} />;
+    }
+
+    if (selectedSeries) {
+        return <SeriesDetailPage series={selectedSeries} onPlayEpisode={handlePlayEpisode} onBack={handleBackToGrid} />;
+    }
+    
+    return (
+      <HomePage
+        playlistData={playlistData}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onBackToMenu={handleBackToMenu}
+        onSwitchToDashboard={() => setView('dashboard')}
+        onSelectItem={handleSelectItem}
+      />
     );
   }
 
@@ -137,23 +193,11 @@ const App: React.FC = () => {
           onSelectAll={handleLoadAllPlaylists}
           onLogout={handleLogout}
           isAdmin={currentUser?.role === 'admin'}
+          onGoToDashboard={() => setView('dashboard')}
         />
       );
     case 'player':
-      if (playlistData && currentUser) {
-        return (
-          <HomePage
-            playlistData={playlistData}
-            currentUser={currentUser}
-            onLogout={handleLogout}
-            onBackToMenu={handleBackToMenu}
-            onSwitchToDashboard={() => setView('dashboard')}
-          />
-        );
-      }
-      // Fallback if playlistData is not available
-      setView('selector');
-      return null;
+      return renderPlayerView();
     default:
       return <div className="text-white p-10 bg-[#0f1117] min-h-screen">An unexpected error occurred. Please reload the application.</div>;
   }

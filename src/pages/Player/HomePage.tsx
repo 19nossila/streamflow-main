@@ -1,10 +1,9 @@
 
-import React, { useState, useMemo, useRef } from 'react';
-import { Channel, PlaylistData, User } from '../../types';
-import VideoPlayer, { VideoPlayerHandle } from '../../components/VideoPlayer';
+import React, { useState, useMemo } from 'react';
+import { ContentItem, PlaylistData, User } from '../../types';
 import Sidebar from '../../components/Sidebar';
 import ContentGrid from '../../components/ContentGrid';
-import { Menu, X, ArrowLeft, LogOut, LayoutDashboard, Play } from 'lucide-react';
+import { Menu, X, ArrowLeft } from 'lucide-react';
 
 interface HomePageProps {
   playlistData: PlaylistData;
@@ -12,6 +11,7 @@ interface HomePageProps {
   onLogout: () => void;
   onBackToMenu: () => void;
   onSwitchToDashboard: () => void;
+  onSelectItem: (item: ContentItem) => void;
 }
 
 const HomePage: React.FC<HomePageProps> = ({ 
@@ -19,82 +19,31 @@ const HomePage: React.FC<HomePageProps> = ({
   currentUser, 
   onLogout, 
   onBackToMenu,
-  onSwitchToDashboard
+  onSwitchToDashboard,
+  onSelectItem
 }) => {
-  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
-  const [showPlayer, setShowPlayer] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const playerRef = useRef<VideoPlayerHandle>(null);
 
-  const filteredChannels = useMemo(() => {
-    let channels = playlistData.channels;
+  const filteredItems = useMemo(() => {
+    let items = playlistData.items;
     if (selectedGroup) {
-      channels = channels.filter(c => c.group === selectedGroup);
+      items = items.filter(i => i.group === selectedGroup);
     }
     if (searchQuery) {
-      channels = channels.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      items = items.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
     }
-    return channels;
-  }, [playlistData.channels, selectedGroup, searchQuery]);
+    return items;
+  }, [playlistData.items, selectedGroup, searchQuery]);
 
-  const handleSelectChannel = (channel: Channel) => {
-    setSelectedChannel(channel);
-    setSearchQuery('');
+  const handleSelectItem = (item: ContentItem) => {
+    onSelectItem(item);
     if (window.innerWidth < 768) {
       setMobileMenuOpen(false);
     }
   };
 
-  const handlePlay = () => {
-    if (selectedChannel) {
-      setShowPlayer(true);
-      // Wait for the player to mount, then trigger fullscreen
-      setTimeout(() => {
-        playerRef.current?.enterFullscreen();
-      }, 150);
-    }
-  };
-  
-  const handleClosePlayer = () => {
-    // If the user exits fullscreen, we can bring them back to the details page
-    if (document.fullscreenElement) {
-        document.exitFullscreen();
-    }
-    setShowPlayer(false);
-  }
-
-  const handleBackToGrid = () => {
-    setSelectedChannel(null);
-  }
-
-  // 1. Player View
-  if (showPlayer && selectedChannel) {
-    return (
-      <div className="h-screen w-screen bg-black flex flex-col text-white">
-        {/* We can hide the controls when in fullscreen, or show them for a moment */}
-        <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/70 to-transparent z-10 opacity-0 hover:opacity-100 transition-opacity">
-           <div className="flex items-center justify-between">
-             <h2 className="text-lg font-bold truncate">{selectedChannel.name}</h2>
-             <button onClick={handleClosePlayer} className="px-4 py-2 bg-red-600/80 font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
-               <ArrowLeft size={18}/> Back to Details
-              </button>
-           </div>
-        </div>
-        <div className="flex-1 bg-black">
-          <VideoPlayer 
-            ref={playerRef} 
-            url={selectedChannel.url} 
-            poster={selectedChannel.logo} 
-            onError={handleClosePlayer}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // 2. Main View (Sidebar + Content)
   return (
     <div className="flex flex-col h-screen bg-[#07080a] overflow-hidden text-white font-sans">
       {/* Mobile Header */}
@@ -117,43 +66,23 @@ const HomePage: React.FC<HomePageProps> = ({
             setSearchQuery={setSearchQuery}
             selectedGroup={selectedGroup}
             setSelectedGroup={setSelectedGroup}
-            channelCount={filteredChannels.length}
+            itemCount={filteredItems.length}
             onBackToMenu={onBackToMenu}
+            onLogout={onLogout}
+            onGoToDashboard={onSwitchToDashboard}
+            isAdmin={currentUser.role === 'admin'}
           />
         </div>
         {mobileMenuOpen && <div className="fixed inset-0 bg-black/60 md:hidden z-30" onClick={() => setMobileMenuOpen(false)} />} 
 
-        {/* Main Content: Switches between Details View and Grid View */}
+        {/* Main Content */}
         <main className="flex-1 flex flex-col w-full h-full overflow-y-auto scrollbar-hide bg-[#07080a]">
-          {selectedChannel ? (
-            // 2a. Details View
-            <div className="relative flex-1 flex flex-col justify-between">
-                <img src={selectedChannel.logo || ''} alt="background" className="absolute inset-0 w-full h-full object-cover opacity-180 blur-lg"/>
-                <div className="absolute inset-0 bg-gradient-to-t from-[#07080a] via-[#07080a]/10 to-transparent"></div>
-                <div className="relative p-8 flex-1 flex flex-col justify-end">
-                  <p className="text-red-500 font-semibold">{selectedChannel.group}</p>
-                  <h1 className="text-5xl font-bold mt-2">{selectedChannel.name}</h1>
-                  <div className="mt-8 flex gap-4">
-                    <button onClick={handlePlay} className="px-8 py-3 bg-red-600 text-white font-bold rounded-lg flex items-center gap-2 hover:bg-red-700 transition-colors">
-                        <Play size={20} />
-                        Reproduzir
-                    </button>
-                    <button onClick={handleBackToGrid} className="px-8 py-3 bg-white/10 text-white font-bold rounded-lg flex items-center gap-2 hover:bg-white/20 transition-colors">
-                        <ArrowLeft size={20} />
-                        Voltar
-                    </button>
-                  </div>
-                </div>
-            </div>
-          ) : (
-            // 2b. Grid View
-            <ContentGrid 
-                channels={filteredChannels}
-                groups={playlistData.groups}
-                onSelectChannel={handleSelectChannel}
-                selectedGroup={selectedGroup}
-            />
-          )}
+          <ContentGrid 
+              items={filteredItems}
+              groups={playlistData.groups}
+              onSelectItem={handleSelectItem}
+              selectedGroup={selectedGroup}
+          />
         </main>
       </div>
     </div>
