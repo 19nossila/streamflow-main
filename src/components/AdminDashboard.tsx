@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
+import { xtreamService } from '../services/xtreamService';
 import { User, StoredPlaylist } from '../types';
 
 interface AdminDashboardProps {
@@ -28,6 +29,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
   
   // Source Forms
   const [sourceUrls, setSourceUrls] = useState('');
+  const [xtreamCredentials, setXtreamCredentials] = useState({ serverUrl: '', username: '', password: '' });
   const [uploadLoading, setUploadLoading] = useState(false);
   
   // Notifications
@@ -222,6 +224,49 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
       } finally {
           setUploadLoading(false);
       }
+  };
+  
+  const handleAddXtream = async (playlistId: string) => {
+    setUploadLoading(true);
+    clearMessages();
+
+    const { serverUrl, username, password } = xtreamCredentials;
+    if (!serverUrl || !username) {
+        setError("Server URL and Username are required for Xtream login.");
+        setUploadLoading(false);
+        return;
+    }
+
+    try {
+        const channels = await xtreamService.getChannels(serverUrl, username, password);
+        if (channels.length === 0) {
+            setError("No channels found on the Xtream server.");
+            setUploadLoading(false);
+            return;
+        }
+
+        // Convert channels to M3U format
+        let m3uContent = '#EXTM3U\n';
+        for (const channel of channels) {
+            m3uContent += `#EXTINF:-1 tvg-id="${channel.id}" tvg-name="${channel.name}" tvg-logo="${channel.logo}" group-title="${channel.group}",${channel.name}\n`;
+            m3uContent += `${channel.url}\n`;
+        }
+
+        await storageService.addSourceToPlaylist(playlistId, {
+            type: 'xtream',
+            content: m3uContent,
+            identifier: `${username}@${serverUrl}`
+        });
+
+        setXtreamCredentials({ serverUrl: '', username: '', password: '' });
+        await loadData();
+        setSuccessMsg(`Successfully added ${channels.length} channels from Xtream server.`);
+
+    } catch (e: any) {
+        setError(e.message);
+    } finally {
+        setUploadLoading(false);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, playlistId: string) => {
@@ -523,6 +568,38 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
                                   className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded text-white text-sm font-bold transition-colors"
                               >
                                   {uploadLoading ? 'Processing...' : 'Fetch & Add URLs'}
+                              </button>
+                          </div>
+
+                           <div className="bg-gray-800 p-5 rounded-lg border border-gray-700">
+                              <h4 className="font-bold mb-3 text-sm uppercase text-gray-400">Add from Xtream Codes</h4>
+                              <div className="space-y-3">
+                                <input
+                                  placeholder="Server URL (http://...)"
+                                  value={xtreamCredentials.serverUrl}
+                                  onChange={e => setXtreamCredentials({ ...xtreamCredentials, serverUrl: e.target.value })}
+                                  className="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm font-mono focus:ring-1 focus:ring-red-500 outline-none"
+                                />
+                                <input
+                                  placeholder="Username"
+                                  value={xtreamCredentials.username}
+                                  onChange={e => setXtreamCredentials({ ...xtreamCredentials, username: e.target.value })}
+                                  className="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm font-mono focus:ring-1 focus:ring-red-500 outline-none"
+                                />
+                                <input
+                                  type="password"
+                                  placeholder="Password (optional)"
+                                  value={xtreamCredentials.password}
+                                  onChange={e => setXtreamCredentials({ ...xtreamCredentials, password: e.target.value })}
+                                  className="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm font-mono focus:ring-1 focus:ring-red-500 outline-none"
+                                />
+                              </div>
+                              <button 
+                                  onClick={() => handleAddXtream(activePlaylist.id)} 
+                                  disabled={uploadLoading}
+                                  className="w-full mt-3 bg-green-600 hover:bg-green-700 py-2 rounded text-white text-sm font-bold transition-colors"
+                              >
+                                  {uploadLoading ? 'Processing...' : 'Login & Add Channels'}
                               </button>
                           </div>
 
