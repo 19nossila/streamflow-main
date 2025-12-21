@@ -21,18 +21,61 @@ export interface StoredPlaylist {
   sources: PlaylistSource[]; // List of M3U sources merged into this playlist
 }
 
-export interface Channel {
-  id: string;
-  name: string;
-  logo: string | null;
-  url: string;
-  group?: string;
+// --- NEW CONTENT-AWARE TYPE SYSTEM ---
+
+// Base interface for common properties
+interface Content {
+    id: string; // Unique ID (e.g., generated from name/group)
+    name: string;
+    logo: string | null;
+    group?: string;
+    description?: string;
+    rating?: string;
+    year?: string;
 }
 
+// Specific type for Live TV Channels
+export interface LiveChannel extends Content {
+    type: 'live';
+    url: string; // Stream URL
+}
+
+// Specific type for Movies
+export interface Movie extends Content {
+    type: 'movie';
+    url: string; // Stream URL
+}
+
+// Episodes are part of a Series
+export interface Episode extends Content {
+    episodeNumber: number;
+    seasonNumber: number;
+    url: string; // Stream URL
+}
+
+// Seasons group Episodes
+export interface Season {
+    seasonNumber: number;
+    episodes: Episode[];
+}
+
+// Series group Seasons
+export interface Series extends Content {
+    type: 'series';
+    seasons: Season[];
+}
+
+// A union type for any content item in the playlist
+export type ContentItem = LiveChannel | Movie | Series;
+
+// The main data structure holding all processed content
 export interface PlaylistData {
-  channels: Channel[];
+  items: ContentItem[];
   groups: string[];
 }
+
+
+// --- EPG (Electronic Program Guide) --- (Kept for Live TV)
 
 export interface EpgChannel {
   id: string;

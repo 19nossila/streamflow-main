@@ -1,16 +1,17 @@
 
 import React from 'react';
-import { Channel } from '../types';
-import ChannelCard from './ChannelCard';
+import { ContentItem, Series } from '../types';
+import ContentCard from './ContentCard';
 import { Virtuoso, VirtuosoGrid } from 'react-virtuoso';
 
 interface ContentGridProps {
-  channels: Channel[];
+  items: ContentItem[];
   groups: string[];
-  onSelectChannel: (channel: Channel) => void;
+  onSelectItem: (item: ContentItem) => void;
   selectedGroup: string | null;
 }
 
+// --- Grid Components for VirtuosoGrid ---
 const GridList = React.forwardRef<HTMLDivElement>(({ children, ...props }, ref) => (
     <div
       ref={ref}
@@ -27,57 +28,58 @@ const GridItem = ({ children, ...props }: { children: React.ReactNode }) => (
     </div>
 );
 
+// --- Main ContentGrid Component ---
+const ContentGrid: React.FC<ContentGridProps> = ({ items, groups, onSelectItem, selectedGroup }) => {
 
-const ContentGrid: React.FC<ContentGridProps> = ({ channels, groups, onSelectChannel, selectedGroup }) => {
-
-  const groupedChannels = React.useMemo(() => {
-    const groupMap: { [key: string]: Channel[] } = {};
-    channels.forEach(channel => {
-      const group = channel.group || 'Uncategorized';
+  const groupedItems = React.useMemo(() => {
+    const groupMap: { [key: string]: ContentItem[] } = {};
+    items.forEach(item => {
+      const group = item.group || 'Uncategorized';
       if (!groupMap[group]) {
         groupMap[group] = [];
       }
-      groupMap[group].push(channel);
+      groupMap[group].push(item);
     });
     return groupMap;
-  }, [channels]);
+  }, [items]);
 
-  // If a group is selected, use VirtuosoGrid for a virtualized grid
+  // RENDER A SPECIFIC GROUP (VIRTUALIZED GRID)
   if (selectedGroup) {
+    const itemsInGroup = items.filter(i => i.group === selectedGroup);
     return (
       <VirtuosoGrid
         style={{ height: '100%' }}
-        totalCount={channels.length}
+        totalCount={itemsInGroup.length}
         components={{
             List: GridList,
             Item: GridItem,
         }}
         itemContent={index => (
-            <ChannelCard channel={channels[index]} onSelect={onSelectChannel} />
+            <ContentCard item={itemsInGroup[index]} onSelect={onSelectItem} />
         )}
-        data={channels}
+        data={itemsInGroup}
       />
     );
   }
 
-  const filteredGroups = groups.filter(group => groupedChannels[group] && groupedChannels[group].length > 0);
+  const filteredGroups = groups.filter(group => groupedItems[group] && groupedItems[group].length > 0);
 
-  // Otherwise, use Virtuoso for a virtualized list of horizontal rows
+  // RENDER ALL GROUPS (VIRTUALIZED LIST OF HORIZONTAL SCROLLS)
   return (
     <Virtuoso
         style={{ height: '100%' }}
         data={filteredGroups}
         className="py-6"
         itemContent={(_index, group) => {
-            const channelsInGroup = groupedChannels[group];
+            const itemsInGroup = groupedItems[group];
             return (
                 <div key={group} className="pb-8">
                     <h2 className="text-xl font-bold text-white px-6 mb-3 capitalize">{group}</h2>
                     <div className="px-6 overflow-x-auto scrollbar-hide">
                         <div className="flex flex-nowrap gap-4 w-max">
-                            {channelsInGroup.map(channel => (
-                                <div key={channel.url} className="w-40 flex-shrink-0">
-                                    <ChannelCard channel={channel} onSelect={onSelectChannel} />
+                            {itemsInGroup.map(item => (
+                                <div key={item.id} className="w-40 flex-shrink-0">
+                                    <ContentCard item={item} onSelect={onSelectItem} />
                                 </div>
                             ))}
                         </div>
