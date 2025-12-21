@@ -124,7 +124,7 @@ const HomePage: React.FC<HomePageProps> = ({
             // 2a. Details View
             <div className="relative flex-1 flex flex-col justify-between">
                 <img src={selectedChannel.logo || ''} alt="background" className="absolute inset-0 w-full h-full object-cover opacity-40 blur-lg"/>
-                <div className="absolute inset-0 bg-gradient-to-t from-[#07080a] via-[#07080a]/60 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#07080a] via-[#07080a]/10 to-transparent"></div>
                 <div className="relative p-8 flex-1 flex flex-col justify-end">
                   <p className="text-red-500 font-semibold">{selectedChannel.group}</p>
                   <h1 className="text-5xl font-bold mt-2">{selectedChannel.name}</h1>
