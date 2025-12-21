@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { StoredPlaylist } from '../types';
 import { storageService } from '../services/storage';
 import { 
   PlayCircle, 
   LogOut, 
-  Settings, 
+  LayoutDashboard, 
   ChevronRight, 
   Layers, 
   Tv, 
@@ -12,7 +13,6 @@ import {
   Activity,
   AlertTriangle,
   Loader2,
-  LayoutGrid
 } from 'lucide-react';
 
 interface PlaylistSelectorProps {
@@ -20,27 +20,27 @@ interface PlaylistSelectorProps {
   onSelectAll: () => void;
   onLogout: () => void;
   isAdmin: boolean;
+  onGoToDashboard: () => void;
 }
 
-const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ onSelect, onSelectAll, onLogout, isAdmin }) => {
+const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ onSelect, onSelectAll, onLogout, isAdmin, onGoToDashboard }) => {
   const [playlists, setPlaylists] = useState<StoredPlaylist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPlaylists = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
         const fetchedPlaylists = await storageService.getPlaylists();
         setPlaylists(fetchedPlaylists);
       } catch (err: any) {
         console.error("Failed to fetch playlists:", err);
-        setError(err.message || 'Could not load playlists. Please try again later.');
+        setError(err.message || 'Could not load playlists.');
       } finally {
         setLoading(false);
       }
     };
-
     fetchPlaylists();
   }, []);
 
@@ -52,14 +52,14 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ onSelect, onSelectA
           </div>
           <h1 className="text-xl font-black tracking-tighter text-white">STREAMFLOW</h1>
         </div>
-        
         <div className="flex items-center gap-3">
             {isAdmin && (
                 <button 
-                  onClick={() => window.location.reload()} 
+                  onClick={onGoToDashboard} 
                   className="p-2.5 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                  title="Go to Admin Dashboard"
                 >
-                    <Settings size={20} />
+                    <LayoutDashboard size={20} />
                 </button>
             )}
             <button 
@@ -111,84 +111,58 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ onSelect, onSelectA
   return (
     <div className="min-h-screen bg-[#07080a] text-white">
         <Header />
-        
         <main className="max-w-7xl mx-auto px-6 py-12">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-8 h-[2px] bg-red-600"></span>
-                  <span className="text-red-500 font-bold uppercase tracking-[0.2em] text-[10px]">Media Library</span>
-                </div>
+            <div className="mb-12">
                 <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Your Playlists</h2>
-              </div>
-              
-              <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
-                <button className="px-4 py-2 bg-red-600 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-red-600/20">
-                  <LayoutGrid size={14} /> Grid
-                </button>
-                <button className="px-4 py-2 text-gray-500 text-xs font-bold hover:text-gray-300">
-                   List
-                </button>
-              </div>
             </div>
-            
             {playlists.length === 0 ? (
-                <div className="text-center bg-[#0f1117] p-16 rounded-[40px] border border-white/5 shadow-inner">
-                    <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <Layers className="text-gray-700" size={48} />
-                    </div>
-                    <h3 className="text-2xl font-bold mb-2">The library is empty</h3>
-                    <p className="text-gray-500 max-w-xs mx-auto text-sm">Please ask your administrator to upload some M3U playlists to get started.</p>
+                <div className="text-center bg-[#0f1117] p-16 rounded-[40px] border border-white/5">
+                    <Layers className="text-gray-700 w-16 h-16 mx-auto mb-4"/>
+                    <h3 className="text-2xl font-bold mb-2">Library is Empty</h3>
+                    <p className="text-gray-500 max-w-xs mx-auto text-sm">Admin needs to upload M3U playlists.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                    {/* "Load All" High-Impact Card */}
                     <button
                         onClick={onSelectAll}
-                        className="group relative overflow-hidden bg-gradient-to-br from-red-600 to-red-900 rounded-[32px] p-8 text-left transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-600/30 flex flex-col justify-between h-[240px]"
+                        className="group relative overflow-hidden bg-gradient-to-br from-red-600 to-red-900 rounded-[32px] p-8 text-left transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-600/30 flex flex-col justify-between h-[240px]"
                     >
-                        <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
-                        
                         <div className="relative z-10 w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
                             <Activity className="text-white" size={24} />
                         </div>
-                        
                         <div className="relative z-10">
-                            <h3 className="text-2xl font-black text-white leading-tight mb-2">All Content<br/>Combined</h3>
-                            <div className="flex items-center gap-2 text-red-200 text-xs font-bold uppercase tracking-widest">
-                              <span>Merge everything</span>
+                            <h3 className="text-2xl font-black text-white leading-tight">All Content</h3>
+                            <div className="flex items-center gap-2 text-red-200 text-xs font-bold">
+                              <span>Merge & Play</span>
                               <ChevronRight size={14} />
                             </div>
                         </div>
                     </button>
 
                     {playlists.map((playlist) => {
-                        // Attempt to guess type based on name for icons
-                        const name = playlist.name.toLowerCase();
-                        const isMovie = name.includes('movie') || name.includes('filme') || name.includes('vod');
-                        const isLive = name.includes('live') || name.includes('tv') || name.includes('canais');
+                        const isMovie = playlist.name.toLowerCase().includes('movie') || playlist.name.toLowerCase().includes('filme');
+                        const isLive = playlist.name.toLowerCase().includes('live') || playlist.name.toLowerCase().includes('tv');
 
                         return (
                           <button
                               key={playlist.id}
                               onClick={() => onSelect(playlist)}
-                              className="group relative bg-[#0f1117] rounded-[32px] p-8 text-left transition-all duration-300 hover:bg-[#161922] border border-white/5 hover:border-white/10 flex flex-col justify-between h-[240px] shadow-xl"
+                              className="group relative bg-[#0f1117] rounded-[32px] p-8 text-left transition-all hover:bg-[#161922] border border-white/5 hover:border-white/10 flex flex-col justify-between h-[240px] shadow-xl"
                           >
                               <div className="flex justify-between items-start">
                                 <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center group-hover:bg-red-600/10 group-hover:text-red-500 transition-colors">
                                     {isMovie ? <Film size={22} /> : isLive ? <Tv size={22} /> : <Layers size={22} />}
                                 </div>
-                                <div className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-gray-500 uppercase tracking-tighter">
+                                <div className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-gray-500">
                                   {playlist.sources.length} sources
                                 </div>
                               </div>
-                              
                               <div>
                                   <h3 className="text-xl font-bold text-white mb-2 group-hover:text-red-500 transition-colors line-clamp-2 leading-tight">
                                     {playlist.name}
                                   </h3>
-                                  <div className="flex items-center gap-1 text-gray-600 text-[10px] font-bold uppercase tracking-widest">
-                                    <span>Browse Library</span>
+                                  <div className="flex items-center gap-1 text-gray-600 text-[10px] font-bold">
+                                    <span>Browse</span>
                                     <ChevronRight size={12} className="group-hover:translate-x-1 transition-transform" />
                                   </div>
                               </div>
@@ -198,9 +172,8 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ onSelect, onSelectA
                 </div>
             )}
         </main>
-
-        <footer className="mt-auto py-12 px-6 border-t border-white/5 text-center">
-          <p className="text-gray-600 text-xs font-medium tracking-widest uppercase">StreamFlow Media Player v2.0</p>
+        <footer className="py-12 px-6 border-t border-white/5 text-center mt-16">
+          <p className="text-gray-600 text-xs">StreamFlow v2.0</p>
         </footer>
     </div>
   );
