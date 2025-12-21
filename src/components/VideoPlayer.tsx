@@ -134,17 +134,17 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, post
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        backBufferLength: 60,
-        maxBufferLength: 30,
-        maxMaxBufferLength: 60,
+        backBufferLength: 90,
+        maxBufferLength: 120,
+        maxMaxBufferLength: 600,
         manifestLoadingTimeOut: 15000,
         manifestLoadingMaxRetry: 4,
         levelLoadingTimeOut: 15000,
         levelLoadingMaxRetry: 4,
         fragLoadingTimeOut: 20000,
         fragLoadingMaxRetry: 6,
-        startLevel: -1, // Auto
-        abrEwmaDefaultEstimate: 500000,
+        startLevel: 0, // Start with the lowest quality for faster startup
+        abrEwmaDefaultEstimate: 1000000, // More optimistic initial bandwidth estimate
       });
 
       hlsRef.current = hls;
