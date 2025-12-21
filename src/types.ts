@@ -9,7 +9,7 @@ export interface User {
 
 export interface PlaylistSource {
   id: string;
-  type: 'url' | 'file';
+  type: 'url' | 'file' | 'xtream';
   content: string; // The raw M3U content
   identifier: string; // The URL string or Filename
   addedAt: number;
