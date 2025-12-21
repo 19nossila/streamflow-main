@@ -83,7 +83,12 @@ const HomePage: React.FC<HomePageProps> = ({
            </div>
         </div>
         <div className="flex-1 bg-black">
-          <VideoPlayer ref={playerRef} url={selectedChannel.url} poster={selectedChannel.logo} />
+          <VideoPlayer 
+            ref={playerRef} 
+            url={selectedChannel.url} 
+            poster={selectedChannel.logo} 
+            onError={handleClosePlayer}
+          />
         </div>
       </div>
     );

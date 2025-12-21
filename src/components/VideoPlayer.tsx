@@ -9,13 +9,14 @@ interface VideoPlayerProps {
   url: string;
   poster?: string | null;
   autoPlay?: boolean;
+  onError?: (error: string) => void; 
 }
 
 export interface VideoPlayerHandle {
   enterFullscreen: () => void;
 }
 
-const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, poster, autoPlay = true }, ref) => {
+const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, poster, autoPlay = true, onError }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Plyr | null>(null);
@@ -26,13 +27,21 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, post
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
 
+  const handleFatalError = useCallback((errorMessage: string) => {
+    console.error("VideoPlayer Fatal Error:", errorMessage);
+    if (onError) {
+      onError(errorMessage);
+    } else {
+      setError(errorMessage);
+      setIsLoading(false);
+    }
+  }, [onError]);
+
   useImperativeHandle(ref, () => ({
     enterFullscreen: () => {
-      // Use Plyr's API to enter fullscreen if it's available and not already active
       if (playerRef.current && !playerRef.current.fullscreen.active) {
         playerRef.current.fullscreen.enter();
       } 
-      // Fallback for cases where Plyr might not be fully initialized
       else if (containerRef.current && !document.fullscreenElement) {
         containerRef.current.requestFullscreen().catch(err => {
           console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
@@ -168,8 +177,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, post
                 setRetryCount(prev => prev + 1);
                 hls.startLoad();
               } else {
-                setError("Network error: The stream source is unreachable.");
-                setIsLoading(false);
+                handleFatalError("Network error: The stream source is unreachable.");
               }
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
@@ -177,8 +185,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, post
               hls.recoverMediaError();
               break;
             default:
-              setError("An unrecoverable playback error occurred.");
-              setIsLoading(false);
+              handleFatalError("An unrecoverable playback error occurred.");
               cleanUp();
               break;
           }
@@ -203,17 +210,15 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, post
       video.addEventListener('error', () => {
           if (!isUsingProxy) setIsUsingProxy(true);
           else {
-              setError("Native player failed to load the stream.");
-              setIsLoading(false);
+              handleFatalError("Native player failed to load the stream.");
           }
       });
     } else {
-      setError("Your browser does not support HLS playback.");
-      setIsLoading(false);
+      handleFatalError("Your browser does not support HLS playback.");
     }
 
     return cleanUp;
-  }, [url, autoPlay, isUsingProxy, retryCount, cleanUp]);
+  }, [url, autoPlay, isUsingProxy, retryCount, cleanUp, handleFatalError]);
 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-[#000] flex items-center justify-center overflow-hidden rounded-2xl group shadow-2xl ring-1 ring-white/10">
