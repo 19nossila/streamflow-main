@@ -1,7 +1,7 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Channel, PlaylistData, User } from '../../types';
-import VideoPlayer from '../../components/VideoPlayer';
+import VideoPlayer, { VideoPlayerHandle } from '../../components/VideoPlayer';
 import Sidebar from '../../components/Sidebar';
 import ContentGrid from '../../components/ContentGrid';
 import { Menu, X, ArrowLeft, LogOut, LayoutDashboard, Play } from 'lucide-react';
@@ -26,6 +26,7 @@ const HomePage: React.FC<HomePageProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const playerRef = useRef<VideoPlayerHandle>(null);
 
   const filteredChannels = useMemo(() => {
     let channels = playlistData.channels;
@@ -40,7 +41,7 @@ const HomePage: React.FC<HomePageProps> = ({
 
   const handleSelectChannel = (channel: Channel) => {
     setSelectedChannel(channel);
-    setSearchQuery(''); // Clear search when a channel is selected
+    setSearchQuery('');
     if (window.innerWidth < 768) {
       setMobileMenuOpen(false);
     }
@@ -49,29 +50,40 @@ const HomePage: React.FC<HomePageProps> = ({
   const handlePlay = () => {
     if (selectedChannel) {
       setShowPlayer(true);
+      // Wait for the player to mount, then trigger fullscreen
+      setTimeout(() => {
+        playerRef.current?.enterFullscreen();
+      }, 150);
     }
   };
   
   const handleClosePlayer = () => {
-    setShowPlayer(false); // Go back to the details view
+    // If the user exits fullscreen, we can bring them back to the details page
+    if (document.fullscreenElement) {
+        document.exitFullscreen();
+    }
+    setShowPlayer(false);
   }
 
   const handleBackToGrid = () => {
-    setSelectedChannel(null); // Go back to the grid view
+    setSelectedChannel(null);
   }
 
   // 1. Player View
   if (showPlayer && selectedChannel) {
     return (
       <div className="h-screen w-screen bg-black flex flex-col text-white">
-        <div className="flex-shrink-0 p-4 bg-black/50 flex items-center justify-between z-10">
-           <h2 className="text-lg font-bold truncate">{selectedChannel.name}</h2>
-           <button onClick={handleClosePlayer} className="px-4 py-2 bg-red-600 font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
-             <ArrowLeft size={18}/> Back to Details
-            </button>
+        {/* We can hide the controls when in fullscreen, or show them for a moment */}
+        <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/70 to-transparent z-10 opacity-0 hover:opacity-100 transition-opacity">
+           <div className="flex items-center justify-between">
+             <h2 className="text-lg font-bold truncate">{selectedChannel.name}</h2>
+             <button onClick={handleClosePlayer} className="px-4 py-2 bg-red-600/80 font-semibold rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+               <ArrowLeft size={18}/> Back to Details
+              </button>
+           </div>
         </div>
         <div className="flex-1 bg-black">
-          <VideoPlayer url={selectedChannel.url} poster={selectedChannel.logo} />
+          <VideoPlayer ref={playerRef} url={selectedChannel.url} poster={selectedChannel.logo} />
         </div>
       </div>
     );

@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+
+import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import Hls from 'hls.js';
 import 'plyr/dist/plyr.css';
 import { Loader2, RefreshCw, ExternalLink, AlertCircle } from 'lucide-react';
@@ -10,7 +11,11 @@ interface VideoPlayerProps {
   autoPlay?: boolean;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster, autoPlay = true }) => {
+export interface VideoPlayerHandle {
+  enterFullscreen: () => void;
+}
+
+const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, poster, autoPlay = true }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Plyr | null>(null);
@@ -20,6 +25,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster, autoPlay = true 
   const [isUsingProxy, setIsUsingProxy] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+
+  useImperativeHandle(ref, () => ({
+    enterFullscreen: () => {
+      // Use Plyr's API to enter fullscreen if it's available and not already active
+      if (playerRef.current && !playerRef.current.fullscreen.active) {
+        playerRef.current.fullscreen.enter();
+      } 
+      // Fallback for cases where Plyr might not be fully initialized
+      else if (containerRef.current && !document.fullscreenElement) {
+        containerRef.current.requestFullscreen().catch(err => {
+          console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+      }
+    }
+  }));
 
   const cleanUp = useCallback(() => {
     if (hlsRef.current) {
@@ -93,7 +113,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster, autoPlay = true 
         if (!playerRef.current) {
             playerRef.current = new Plyr(video, plyrOptions);
             
-            // Sync Plyr with video events
             video.onplaying = () => setIsLoading(false);
             video.onwaiting = () => setIsLoading(true);
             video.onloadeddata = () => setIsLoading(false);
@@ -124,14 +143,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster, autoPlay = true 
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
-        // Build quality options for Plyr
         const availableQualities = [0, ...data.levels.map(l => l.height).filter(h => h > 0)];
         const uniqueQualities = Array.from(new Set(availableQualities)).sort((a, b) => b - a);
         
-        // Update plyr options with actual available qualities
         if (playerRef.current) {
-            // Plyr doesn't easily allow updating quality options after init, 
-            // but we can try to set the internal config
             (playerRef.current as any).config.quality.options = uniqueQualities;
         }
 
@@ -170,7 +185,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster, autoPlay = true 
         }
       });
 
-      // Handle quality level changes
       hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
         const span = document.querySelector('.plyr__control--overlaid .current-quality');
         if (span) {
@@ -180,7 +194,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster, autoPlay = true 
       });
 
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native Safari support
       video.src = playUrl;
       initializePlyr();
       video.addEventListener('loadedmetadata', () => {
@@ -205,7 +218,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster, autoPlay = true 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-[#000] flex items-center justify-center overflow-hidden rounded-2xl group shadow-2xl ring-1 ring-white/10">
       
-      {/* Proxy & Status Indicators */}
       <div className="absolute top-4 left-4 z-20 flex gap-2">
         {isUsingProxy && (
           <div className="bg-amber-500 text-black text-[10px] font-black px-2 py-1 rounded shadow-lg flex items-center gap-1 animate-pulse">
@@ -297,6 +309,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ url, poster, autoPlay = true 
       `}</style>
     </div>
   );
-};
+});
 
 export default VideoPlayer;
