@@ -2,6 +2,7 @@
 import React from 'react';
 import { Channel } from '../types';
 import ChannelCard from './ChannelCard';
+import { Virtuoso, VirtuosoGrid } from 'react-virtuoso';
 
 interface ContentGridProps {
   channels: Channel[];
@@ -9,6 +10,23 @@ interface ContentGridProps {
   onSelectChannel: (channel: Channel) => void;
   selectedGroup: string | null;
 }
+
+const GridList = React.forwardRef<HTMLDivElement>(({ children, ...props }, ref) => (
+    <div
+      ref={ref}
+      {...props}
+      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 p-6"
+    >
+      {children}
+    </div>
+));
+
+const GridItem = ({ children, ...props }: { children: React.ReactNode }) => (
+    <div {...props}>
+      {children}
+    </div>
+);
+
 
 const ContentGrid: React.FC<ContentGridProps> = ({ channels, groups, onSelectChannel, selectedGroup }) => {
 
@@ -24,40 +42,50 @@ const ContentGrid: React.FC<ContentGridProps> = ({ channels, groups, onSelectCha
     return groupMap;
   }, [channels]);
 
-  // If a group is selected, show a simple grid of that group's channels
+  // If a group is selected, use VirtuosoGrid for a virtualized grid
   if (selectedGroup) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 p-6">
-        {channels.map(channel => (
-          <ChannelCard key={channel.url} channel={channel} onSelect={onSelectChannel} />
-        ))}
-      </div>
+      <VirtuosoGrid
+        style={{ height: '100%' }}
+        totalCount={channels.length}
+        components={{
+            List: GridList,
+            Item: GridItem,
+        }}
+        itemContent={index => (
+            <ChannelCard channel={channels[index]} onSelect={onSelectChannel} />
+        )}
+        data={channels}
+      />
     );
   }
 
-  // Otherwise, show channels grouped by category in horizontal rows
-  return (
-    <div className="space-y-8 py-6">
-      {groups.map(group => {
-        const channelsInGroup = groupedChannels[group];
-        if (!channelsInGroup || channelsInGroup.length === 0) return null;
+  const filteredGroups = groups.filter(group => groupedChannels[group] && groupedChannels[group].length > 0);
 
-        return (
-          <div key={group}>
-            <h2 className="text-xl font-bold text-white px-6 mb-3 capitalize">{group}</h2>
-            <div className="px-6 overflow-x-auto scrollbar-hide">
-              <div className="flex flex-nowrap gap-4 w-max">
-                {channelsInGroup.map(channel => (
-                  <div key={channel.url} className="w-40 flex-shrink-0">
-                     <ChannelCard channel={channel} onSelect={onSelectChannel} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+  // Otherwise, use Virtuoso for a virtualized list of horizontal rows
+  return (
+    <Virtuoso
+        style={{ height: '100%' }}
+        data={filteredGroups}
+        className="py-6"
+        itemContent={(_index, group) => {
+            const channelsInGroup = groupedChannels[group];
+            return (
+                <div key={group} className="pb-8">
+                    <h2 className="text-xl font-bold text-white px-6 mb-3 capitalize">{group}</h2>
+                    <div className="px-6 overflow-x-auto scrollbar-hide">
+                        <div className="flex flex-nowrap gap-4 w-max">
+                            {channelsInGroup.map(channel => (
+                                <div key={channel.url} className="w-40 flex-shrink-0">
+                                    <ChannelCard channel={channel} onSelect={onSelectChannel} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }}
+    />
   );
 };
 
