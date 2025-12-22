@@ -15,7 +15,7 @@ const GridList = React.forwardRef<HTMLDivElement, React.PropsWithChildren<React.
     <div
       ref={ref}
       {...props}
-      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 p-6"
+      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 p-4"
     >
       {children}
     </div>
@@ -35,7 +35,7 @@ const ContentGrid: React.FC<ContentGridProps> = ({ items, onSelectItem }) => {
 
   return (
     <VirtuosoGrid
-      style={{ height: 'calc(100vh - 8rem)' }} // Adjust height as needed
+      style={{ height: '100%' }} // Adjust height as needed
       totalCount={items.length}
       components={{
         List: GridList,
