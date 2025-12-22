@@ -1,5 +1,5 @@
 
-import { ContentItem, PlaylistData, LiveChannel, Movie, Series, Season, Episode } from '../types';
+import { ContentItem, PlaylistData, LiveChannel, Movie, Series, Episode } from '../types';
 
 // Enhanced regex to capture series, season, and episode numbers
 // Supports formats like S01E01, s01e01, 1x01, S01 EP01
@@ -11,49 +11,56 @@ export const parseM3U = (m3uContent: string): PlaylistData => {
     const items: (LiveChannel | Movie | Episode)[] = [];
     const groups = new Set<string>();
 
-    let currentChannel: Partial<LiveChannel | Movie | Episode> = {};
+    let currentItem: Partial<LiveChannel | Movie | Episode> = {};
 
     for (const line of lines) {
         if (line.startsWith('#EXTINF:')) {
             const info = line.substring(8).trim();
-            const tvgIdMatch = info.match(/tvg-id="(.*?)"/);
             const tvgLogoMatch = info.match(/tvg-logo="(.*?)"/);
             const groupTitleMatch = info.match(/group-title="(.*?)"/);
             const nameMatch = info.match(/,(.*)/);
 
-            const name = nameMatch ? nameMatch[1].trim() : 'Unnamed';
+            const title = nameMatch ? nameMatch[1].trim() : 'Unnamed';
             const group = groupTitleMatch ? groupTitleMatch[1].trim() : 'Uncategorized';
             groups.add(group);
 
-            currentChannel = {
-                id: name + group, // Simple initial ID
-                name,
-                logo: tvgLogoMatch ? tvgLogoMatch[1] : null,
+            const baseProperties = {
+                id: title + group, // Simple initial ID
+                logo: tvgLogoMatch ? tvgLogoMatch[1] : '',
                 group,
-                description: '', // Placeholder
-                rating: '', // Placeholder
             };
 
-            const seriesMatch = name.match(seriesRegex);
+            const seriesMatch = title.match(seriesRegex);
             if (seriesMatch && group.toLowerCase().includes('series')) {
                 const [, seriesName, seasonNum, episodeNum] = seriesMatch;
-                currentChannel = {
-                    ...currentChannel,
+                currentItem = {
+                    ...baseProperties,
                     type: 'episode',
-                    name: seriesName.trim(),
-                    seasonNumber: parseInt(seasonNum, 10),
-                    episodeNumber: parseInt(episodeNum, 10),
-                } as Omit<Episode, 'url'>;
+                    title: seriesName.trim(),
+                    season: parseInt(seasonNum, 10),
+                    episode: parseInt(episodeNum, 10),
+                };
             } else if (group.toLowerCase().includes('movies') || group.toLowerCase().includes('filmes')) {
-                currentChannel.type = 'movie';
+                currentItem = {
+                    ...baseProperties,
+                    title,
+                    type: 'movie',
+                };
             } else {
-                currentChannel.type = 'live';
+                currentItem = {
+                    ...baseProperties,
+                    title,
+                    type: 'live',
+                };
             }
 
-        } else if (!line.startsWith('#') && currentChannel.name) {
-            (currentChannel as any).url = line.trim();
-            items.push(currentChannel as (LiveChannel | Movie | Episode));
-            currentChannel = {}; // Reset for the next entry
+        } else if (!line.startsWith('#') && currentItem.title) {
+            const completedItem = {
+                ...currentItem,
+                url: line.trim(),
+            } as LiveChannel | Movie | Episode;
+            items.push(completedItem);
+            currentItem = {}; // Reset for the next entry
         }
     }
     
@@ -67,7 +74,7 @@ const processAndGroupContent = (items: (LiveChannel | Movie | Episode)[], groups
 
     for (const item of items) {
         if (item.type === 'episode') {
-            const seriesKey = `${item.name.toLowerCase().trim()}_${item.group}`;
+            const seriesKey = `${item.title.toLowerCase().trim()}_${item.group}`;
             
             // Find or create the series object
             let series = seriesMap.get(seriesKey);
@@ -75,30 +82,22 @@ const processAndGroupContent = (items: (LiveChannel | Movie | Episode)[], groups
                 series = {
                     id: `series_${seriesKey}`,
                     type: 'series',
-                    name: item.name,
+                    title: item.title,
                     logo: item.logo, // Use the logo from the first found episode
                     group: item.group,
-                    seasons: [],
+                    url: '', // Series are containers and don't have a direct stream URL
+                    episodes: [],
                     description: '', // Placeholder
-                    rating: '',
-                    year: ''
                 };
                 seriesMap.set(seriesKey, series);
             }
 
-            // Find or create the season
-            let season = series.seasons.find(s => s.seasonNumber === item.seasonNumber);
-            if (!season) {
-                season = {
-                    seasonNumber: item.seasonNumber,
-                    episodes: [],
-                };
-                series.seasons.push(season);
-            }
-
-            // Add the episode to the season
-            season.episodes.push(item as Episode);
-            season.episodes.sort((a, b) => a.episodeNumber - b.episodeNumber);
+            // Add the episode to the series
+            series.episodes.push(item as Episode);
+            series.episodes.sort((a, b) => {
+                if (a.season !== b.season) return a.season! - b.season!;
+                return a.episode! - b.episode!;
+            });
 
         } else {
             // Movies and Live channels are added directly
@@ -108,8 +107,6 @@ const processAndGroupContent = (items: (LiveChannel | Movie | Episode)[], groups
 
     // Add the fully formed series to the final list
     seriesMap.forEach(series => {
-        // Sort seasons before adding
-        series.seasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
         finalItems.push(series);
     });
 
@@ -118,7 +115,7 @@ const processAndGroupContent = (items: (LiveChannel | Movie | Episode)[], groups
         if (a.type !== b.type) {
             return a.type.localeCompare(b.type);
         }
-        return a.name.localeCompare(b.name);
+        return a.title.localeCompare(b.title);
     });
 
     return { items: finalItems, groups };

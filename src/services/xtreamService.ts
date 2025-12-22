@@ -1,4 +1,4 @@
-import { Channel } from '../types';
+import { LiveChannel } from '../types';
 
 // Define a interface para a resposta da API Xtream
 interface XtreamResponse {
@@ -30,18 +30,18 @@ interface XtreamChannel {
 
 export const xtreamService = {
   // Conecta-se a um servidor Xtream e busca a lista de canais
-  async getChannels(serverUrl: string, username: string, password?: string): Promise<Channel[]> {
+  async getChannels(serverUrl: string, username: string, password?: string): Promise<LiveChannel[]> {
     try {
       const response = await fetch(`${serverUrl}/player_api.php?username=${username}&password=${password || ''}`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-      const data: XtreamResponse = await response.json();
+      await response.json(); // Don't need the data from this response
 
       const liveCategoriesResponse = await fetch(`${serverUrl}/player_api.php?username=${username}&password=${password || ''}&action=get_live_categories`);
       const liveCategories = await liveCategoriesResponse.json();
 
-      const channels: Channel[] = [];
+      const channels: LiveChannel[] = [];
       for (const category of liveCategories) {
         const categoryChannelsResponse = await fetch(`${serverUrl}/player_api.php?username=${username}&password=${password || ''}&action=get_live_streams&category_id=${category.category_id}`);
         const categoryChannels: XtreamChannel[] = await categoryChannelsResponse.json();
@@ -49,10 +49,11 @@ export const xtreamService = {
         for (const channel of categoryChannels) {
           channels.push({
             id: channel.stream_id.toString(),
-            name: channel.name,
+            title: channel.name,
             logo: channel.stream_icon,
             group: category.category_name,
             url: `${serverUrl}/live/${username}/${password || ''}/${channel.stream_id}.ts`,
+            type: 'live',
           });
         }
       }

@@ -45,8 +45,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
       ]);
       setUsers(users);
       setPlaylists(playlists);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError((err as Error).message);
     } finally {
       setLoading(false);
     }
@@ -65,8 +65,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
       await loadData();
       clearMessages();
       setSuccessMsg('User added successfully');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError((err as Error).message);
     }
   };
 
@@ -76,8 +76,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
         await storageService.deleteUser(id);
         await loadData();
         clearMessages();
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError((err as Error).message);
       }
     }
   };
@@ -102,8 +102,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
           await storageService.updateUserPassword(currentUser.id, passwords.new);
           setPasswords({ new: '', confirm: '' });
           setSuccessMsg("Password updated successfully.");
-      } catch (err: any) {
-          setError(err.message);
+      } catch (err: unknown) {
+          setError((err as Error).message);
       }
   };
 
@@ -120,8 +120,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         setSuccessMsg("Configuration exported successfully.");
-      } catch (err: any) {
-        setError("Export failed: " + err.message);
+      } catch (err: unknown) {
+        setError("Export failed: " + (err as Error).message);
       }
   };
 
@@ -141,8 +141,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
               await storageService.importData(content);
               alert("Import successful! Reloading now.");
               window.location.reload();
-          } catch (err: any) {
-              setError("Import failed: " + err.message);
+          } catch (err: unknown) {
+              setError("Import failed: " + (err as Error).message);
           }
       };
       reader.readAsText(file);
@@ -157,8 +157,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
           await loadData();
           setEditingPlaylistId(newPl.id);
           clearMessages();
-      } catch (err: any) {
-          setError(err.message);
+      } catch (err: unknown) {
+          setError((err as Error).message);
       }
   };
 
@@ -197,8 +197,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
           await loadData();
           if (fail > 0) setError(`Added ${success} URLs. Failed to add ${fail}.`);
           else setSuccessMsg(`Successfully added ${success} URLs.`);
-      } catch (e: any) {
-          setError(e.message);
+      } catch (e: unknown) {
+          setError((e as Error).message);
       } finally {
           setUploadLoading(false);
       }
@@ -216,13 +216,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
     try {
         const channels = await xtreamService.getChannels(serverUrl, username, password);
         let m3uContent = '#EXTM3U\n';
-        channels.forEach(ch => { m3uContent += `#EXTINF:-1 tvg-id="${ch.id}" tvg-name="${ch.name}" tvg-logo="${ch.logo}" group-title="${ch.group}",${ch.name}\n${ch.url}\n`; });
+        channels.forEach(ch => { m3uContent += `#EXTINF:-1 tvg-id="${ch.id}" tvg-name="${ch.title}" tvg-logo="${ch.logo}" group-title="${ch.group}",${ch.title}\n${ch.url}\n`; });
         await storageService.addSourceToPlaylist(playlistId, { type: 'xtream', content: m3uContent, identifier: `${username}@${serverUrl}` });
         setXtreamCredentials({ serverUrl: '', username: '', password: '' });
         await loadData();
         setSuccessMsg(`Added ${channels.length} channels from Xtream.`);
-    } catch (e: any) {
-        setError(e.message);
+    } catch (e: unknown) {
+        setError((e as Error).message);
     } finally {
         setUploadLoading(false);
     }

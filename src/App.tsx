@@ -22,44 +22,8 @@ const App: React.FC = () => {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [itemToPlay, setItemToPlay] = useState<LiveChannel | Movie | Episode | null>(null);
 
-  useEffect(() => {
-    const user = storageService.getCurrentUser();
-    if (user) {
-      handleLogin(user); // Use a more generic name now
-    } else {
-      setLoading(false);
-    }
-  }, []);
-
-  const resetPlayerState = () => {
-    setSelectedSeries(null);
-    setSelectedMovie(null);
-    setItemToPlay(null);
-  };
-
-  const handleLogin = (user: User, playlist?: StoredPlaylist) => {
-    setCurrentUser(user);
-    setLoading(false);
-
-    if (playlist) {
-      // Xtream login: a temporary playlist is provided. Bypass selector.
-      handleLoadPlaylist(playlist);
-    } else {
-      // Standard login: go to dashboard or selector.
-      setView(user.role === 'admin' ? 'dashboard' : 'selector');
-    }
-  };
-
-  const handleLogout = () => {
-    storageService.logout();
-    setCurrentUser(null);
-    setPlaylistData(null);
-    resetPlayerState();
-    setView('login');
-  };
-
-  const loadAndParsePlaylists = (sources: { identifier: string; content: string }[]): PlaylistData | null => {
-    let mergedItems: ContentItem[] = [];
+  const loadAndParsePlaylists = useCallback((sources: { identifier: string; content: string }[]): PlaylistData | null => {
+    const mergedItems: ContentItem[] = [];
     const mergedGroups = new Set<string>();
 
     sources.forEach(source => {
@@ -77,38 +41,76 @@ const App: React.FC = () => {
       return null;
     }
     return { items: mergedItems, groups: Array.from(mergedGroups).sort() };
-  };
+  }, []);
 
   const handleLoadPlaylist = useCallback((storedPlaylist: StoredPlaylist) => {
+    if (!storedPlaylist.sources) {
+        alert("Playlist is empty or has no sources.");
+        return;
+    }
     setLoading(true);
-    // Use a short timeout to allow the loading spinner to render
     setTimeout(() => {
-      const data = loadAndParsePlaylists(storedPlaylist.sources);
+      const data = loadAndParsePlaylists(storedPlaylist.sources!);
       if (data) {
         setPlaylistData(data);
         setView('player');
       }
       setLoading(false);
     }, 100);
-  }, []);
+  }, [loadAndParsePlaylists]);
+
+  const handleLogin = useCallback((user: User, playlist?: StoredPlaylist) => {
+    setCurrentUser(user);
+    setLoading(false);
+
+    if (playlist) {
+      handleLoadPlaylist(playlist);
+    } else {
+      setView(user.role === 'admin' ? 'dashboard' : 'selector');
+    }
+  }, [handleLoadPlaylist]);
+
+  useEffect(() => {
+    const user = storageService.getCurrentUser();
+    if (user) {
+      handleLogin(user); 
+    } else {
+      setLoading(false);
+    }
+  }, [handleLogin]);
+
+  const resetPlayerState = () => {
+    setSelectedSeries(null);
+    setSelectedMovie(null);
+    setItemToPlay(null);
+  };
+
+  const handleLogout = () => {
+    storageService.logout();
+    setCurrentUser(null);
+    setPlaylistData(null);
+    resetPlayerState();
+    setView('login');
+  };
 
   const handleLoadAllPlaylists = useCallback(async () => {
     setLoading(true);
     try {
       const allPlaylists = await storageService.getPlaylists();
-      const allSources = allPlaylists.flatMap(p => p.sources);
+      const allSources = allPlaylists.flatMap(p => p.sources || []);
       const data = loadAndParsePlaylists(allSources);
       if (data) {
         setPlaylistData(data);
         setView('player');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Failed to load all playlists:", e);
-      alert(`Error loading all playlists: ${e.message}`);
+      const message = e instanceof Error ? e.message : String(e);
+      alert(`Error loading all playlists: ${message}`);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadAndParsePlaylists]);
 
   const handleSelectItem = (item: ContentItem) => {
     if (item.type === 'series') setSelectedSeries(item);

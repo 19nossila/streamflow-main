@@ -22,7 +22,7 @@ const PlaylistForm: React.FC<PlaylistFormProps> = ({ type, initialData, onSubmit
       setName(initialData.name || '');
       if (initialData.url) {
         // This regex is a simple check and might not cover all Xtream formats
-        const xtreamMatch = initialData.url.match(/^(https?:\/\/[^\/]+)\/get\.php\?username=([^&]+)&password=([^&]+)/);
+        const xtreamMatch = initialData.url.match(/^(https?:\/\/[^/]+)\/get\.php\?username=([^&]+)&password=([^&]+)/);
         if (type === 'xtream' && xtreamMatch) {
           setHost(xtreamMatch[1] || '');
           setUsername(xtreamMatch[2] || '');

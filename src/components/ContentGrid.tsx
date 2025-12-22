@@ -11,7 +11,7 @@ interface ContentGridProps {
 // --- Grid Components for VirtuosoGrid ---
 // We define them with explicit types for props to ensure type safety.
 
-const GridList = React.forwardRef<HTMLDivElement, React.PropsWithChildren<{}>>(({ children, ...props }, ref) => (
+const GridList = React.forwardRef<HTMLDivElement, React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>>(({ children, ...props }, ref) => (
     <div
       ref={ref}
       {...props}
@@ -21,7 +21,7 @@ const GridList = React.forwardRef<HTMLDivElement, React.PropsWithChildren<{}>>((
     </div>
 ));
 
-const GridItem = ({ children, ...props }: React.PropsWithChildren<{}>) => (
+const GridItem = ({ children, ...props }: React.PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>) => (
     <div {...props}>
       {children}
     </div>

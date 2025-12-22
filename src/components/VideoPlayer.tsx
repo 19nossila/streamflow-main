@@ -75,7 +75,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ url, onCl
 
       hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
         const availableQualities = [0, ...data.levels.map(l => l.height).filter(Boolean)];
-        (plyr as any).config.quality.options = [...new Set(availableQualities)];
+        (plyr as Plyr & { config: { quality: { options: number[] } } }).config.quality.options = [...new Set(availableQualities)];
       });
 
       hls.on(Hls.Events.ERROR, (event, data) => {

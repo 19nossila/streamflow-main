@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getUsers, updateUser, deleteUser, getPlaylists, addPlaylist, updatePlaylist, deletePlaylist, getSettings, updateSettings } from '../utils/api';
+import { apiService } from '../services/api';
 import { User, StoredPlaylist } from '../types';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
-import 'react-tabs/style/react-tabs.css';
+import 'react-tabs/dist/react-tabs.css';
 import PlaylistForm from '../components/PlaylistForm';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 
@@ -21,9 +21,9 @@ const AdminDashboard: React.FC = () => {
 
     const loadData = useCallback(async () => {
         try {
-            const usersData = await getUsers();
-            const playlistsData = await getPlaylists();
-            const settingsData = await getSettings();
+            const usersData = await apiService.getUsers();
+            const playlistsData = await apiService.getPlaylists();
+            const settingsData = await apiService.getSettings();
             setUsers(usersData);
             setPlaylists(playlistsData);
             setSettings(settingsData);
@@ -39,7 +39,7 @@ const AdminDashboard: React.FC = () => {
     // User Management Handlers
     const handleUserUpdate = async (user: User) => {
         try {
-            const updatedUser = await updateUser(user.id, user);
+            const updatedUser = await apiService.updateUser(user.id, user);
             setUsers(users.map(u => u.id === user.id ? updatedUser : u));
             setEditingUser(null);
         } catch (error) {
@@ -50,7 +50,7 @@ const AdminDashboard: React.FC = () => {
     const handleUserDelete = async (userId: string) => {
         if (window.confirm("Are you sure you want to delete this user?")) {
             try {
-                await deleteUser(userId);
+                await apiService.deleteUser(userId);
                 setUsers(users.filter(u => u.id !== userId));
             } catch (error) {
                 console.error("Error deleting user:", error);
@@ -62,10 +62,10 @@ const AdminDashboard: React.FC = () => {
     const handlePlaylistSubmit = async (playlistData: Omit<StoredPlaylist, 'id'>) => {
         try {
             if (editingPlaylist) {
-                const updatedPlaylist = await updatePlaylist(editingPlaylist.id, playlistData);
+                const updatedPlaylist = await apiService.updatePlaylist(editingPlaylist.id, playlistData);
                 setPlaylists(playlists.map(p => p.id === editingPlaylist.id ? updatedPlaylist : p));
             } else {
-                const newPlaylist = await addPlaylist(playlistData);
+                const newPlaylist = await apiService.addPlaylist(playlistData);
                 setPlaylists([...playlists, newPlaylist]);
             }
             setPlaylistModalOpen(false);
@@ -78,7 +78,7 @@ const AdminDashboard: React.FC = () => {
     const handlePlaylistDelete = async (playlistId: string) => {
         if (window.confirm("Are you sure you want to delete this playlist?")) {
             try {
-                await deletePlaylist(playlistId);
+                await apiService.deletePlaylist(playlistId);
                 setPlaylists(playlists.filter(p => p.id !== playlistId));
             } catch (error) {
                 console.error("Error deleting playlist:", error);
@@ -103,7 +103,7 @@ const AdminDashboard: React.FC = () => {
 
     const handleSettingsSave = async () => {
         try {
-            await updateSettings(settings);
+            await apiService.updateSettings(settings);
             alert("Settings saved successfully!");
         } catch (error) {
             console.error("Error saving settings:", error);

@@ -34,9 +34,9 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ onSelect, onSelectA
       try {
         const fetchedPlaylists = await storageService.getPlaylists();
         setPlaylists(fetchedPlaylists);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch playlists:", err);
-        setError(err.message || 'Could not load playlists.');
+        setError((err as Error).message || 'Could not load playlists.');
       } finally {
         setLoading(false);
       }

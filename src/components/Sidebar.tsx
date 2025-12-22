@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Search, ArrowLeft, LogOut, LayoutDashboard, Database, Wand2 } from 'lucide-react';
+import { Search, LogOut, LayoutDashboard, Database, Wand2 } from 'lucide-react';
 
 interface SidebarProps {
   groups: string[];

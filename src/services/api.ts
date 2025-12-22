@@ -51,6 +51,13 @@ export const apiService = {
       body: JSON.stringify(user),
     });
   },
+
+  updateUser: (id: string, user: Partial<User>): Promise<User> => {
+    return fetchApi(`/api/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(user),
+    });
+  },
   
   updateUserPassword: (userId: number | string, newPassword: string): Promise<void> => {
     return fetchApi(`/api/users/${userId}/password`, {
@@ -77,6 +84,20 @@ export const apiService = {
     });
   },
 
+  addPlaylist: (playlist: Omit<StoredPlaylist, 'id'>): Promise<StoredPlaylist> => {
+    return fetchApi('/api/playlists', {
+      method: 'POST',
+      body: JSON.stringify(playlist),
+    });
+  },
+
+  updatePlaylist: (id: string, playlist: Partial<StoredPlaylist>): Promise<StoredPlaylist> => {
+    return fetchApi(`/api/playlists/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(playlist),
+    });
+  },
+
   deletePlaylist: (id: number | string): Promise<void> => {
     return fetchApi(`/api/playlists/${id}`, {
       method: 'DELETE',
@@ -94,6 +115,18 @@ export const apiService = {
   removeSourceFromPlaylist: (playlistId: number | string, sourceId: number | string): Promise<void> => {
     return fetchApi(`/api/playlists/${playlistId}/sources/${sourceId}`, {
       method: 'DELETE',
+    });
+  },
+
+  // --- Settings ---
+  getSettings: (): Promise<any> => {
+    return fetchApi('/api/settings');
+  },
+
+  updateSettings: (settings: any): Promise<any> => {
+    return fetchApi('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify(settings),
     });
   },
 

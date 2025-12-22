@@ -27,8 +27,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       } else {
         setError('Invalid username or password');
       }
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'An unexpected error occurred.');
     }
   };
 
@@ -46,7 +46,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         }
 
         let m3uContent = '#EXTM3U\n';
-        channels.forEach(ch => { m3uContent += `#EXTINF:-1 tvg-id="${ch.id}" tvg-name="${ch.name}" tvg-logo="${ch.logo}" group-title="${ch.group}",${ch.name}\n${ch.url}\n`; });
+        channels.forEach(ch => { m3uContent += `#EXTINF:-1 tvg-id="${ch.id}" tvg-name="${ch.title}" tvg-logo="${ch.logo}" group-title="${ch.group}",${ch.title}\n${ch.url}\n`; });
 
         const tempUser: User = { id: 'xtream_user', username: 'Xtream', role: 'user' };
         const tempPlaylist: StoredPlaylist = {
@@ -63,8 +63,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         
         onLogin(tempUser, tempPlaylist);
 
-    } catch (e: any) {
-        setError(e.message);
+    } catch (e: unknown) {
+        setError((e as Error).message);
     }
   };
 
