@@ -24,7 +24,11 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const user = storageService.getCurrentUser();
-    user ? handleLoginSuccess(user) : setLoading(false);
+    if (user) {
+      handleLogin(user); // Use a more generic name now
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const resetPlayerState = () => {
@@ -33,10 +37,17 @@ const App: React.FC = () => {
     setItemToPlay(null);
   };
 
-  const handleLoginSuccess = (user: User) => {
+  const handleLogin = (user: User, playlist?: StoredPlaylist) => {
     setCurrentUser(user);
     setLoading(false);
-    setView(user.role === 'admin' ? 'dashboard' : 'selector');
+
+    if (playlist) {
+      // Xtream login: a temporary playlist is provided. Bypass selector.
+      handleLoadPlaylist(playlist);
+    } else {
+      // Standard login: go to dashboard or selector.
+      setView(user.role === 'admin' ? 'dashboard' : 'selector');
+    }
   };
 
   const handleLogout = () => {
@@ -70,6 +81,7 @@ const App: React.FC = () => {
 
   const handleLoadPlaylist = useCallback((storedPlaylist: StoredPlaylist) => {
     setLoading(true);
+    // Use a short timeout to allow the loading spinner to render
     setTimeout(() => {
       const data = loadAndParsePlaylists(storedPlaylist.sources);
       if (data) {
@@ -98,26 +110,15 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // --- Navigation from Content Grid --- //
   const handleSelectItem = (item: ContentItem) => {
-    switch (item.type) {
-      case 'series':
-        setSelectedSeries(item);
-        break;
-      case 'movie':
-        setSelectedMovie(item);
-        break;
-      case 'live':
-        setItemToPlay(item);
-        break;
-    }
+    if (item.type === 'series') setSelectedSeries(item);
+    else if (item.type === 'movie') setSelectedMovie(item);
+    else if (item.type === 'live') setItemToPlay(item);
   };
 
-  // --- Navigation from Detail Pages --- //
   const handlePlayMovie = (movie: Movie) => setItemToPlay(movie);
   const handlePlayEpisode = (episode: Episode) => setItemToPlay(episode);
 
-  // --- Back / Close Actions --- //
   const handleBackToGrid = () => {
     setSelectedSeries(null);
     setSelectedMovie(null);
@@ -131,13 +132,9 @@ const App: React.FC = () => {
     resetPlayerState();
   };
 
-  // --- Render Logic --- //
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0f1117] flex flex-col items-center justify-center text-white">
-        <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-6 text-gray-400 text-xs tracking-widest uppercase">Initializing StreamFlow</p>
-      </div>
+      <div className="min-h-screen bg-[#0f1117] flex items-center justify-center"><div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div></div>
     );
   }
 
@@ -146,25 +143,14 @@ const App: React.FC = () => {
         handleBackToMenu();
         return null;
     }
-
     if (itemToPlay) return <VideoPlayer url={itemToPlay.url} onClose={handleClosePlayer} poster={itemToPlay.logo} />;
     if (selectedMovie) return <MovieDetailPage movie={selectedMovie} onPlay={handlePlayMovie} onBack={handleBackToGrid} />;
     if (selectedSeries) return <SeriesDetailPage series={selectedSeries} onPlayEpisode={handlePlayEpisode} onBack={handleBackToGrid} />;
-    
-    return (
-      <HomePage
-        playlistData={playlistData}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        onBackToMenu={handleBackToMenu}
-        onSwitchToDashboard={() => setView('dashboard')}
-        onSelectItem={handleSelectItem}
-      />
-    );
+    return <HomePage playlistData={playlistData} currentUser={currentUser} onLogout={handleLogout} onBackToMenu={handleBackToMenu} onSwitchToDashboard={() => setView('dashboard')} onSelectItem={handleSelectItem} />;
   }
 
   switch (view) {
-    case 'login': return <Login onLogin={handleLoginSuccess} />;
+    case 'login': return <Login onLogin={handleLogin} />;
     case 'dashboard': return <AdminDashboard onLogout={handleLogout} onPreview={handleLoadPlaylist} />;
     case 'selector': return <PlaylistSelector onSelect={handleLoadPlaylist} onSelectAll={handleLoadAllPlaylists} onLogout={handleLogout} isAdmin={currentUser?.role === 'admin'} onGoToDashboard={() => setView('dashboard')} />;
     case 'player': return renderPlayerView();
