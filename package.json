@@ -17,15 +17,18 @@
     "express": "^4.19.2",
     "hls.js": "^1.5.8",
     "lucide-react": "^0.378.0",
+    "plyr": "^3.8.3",
     "react-icons": "^5.0.1",
     "react-tabs": "^6.1.0",
     "react-virtuoso": "^4.17.0",
     "sqlite": "^5.0.1",
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.1.6",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
+    "@types/xml2js": "^0.4.14",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
     "@typescript-eslint/parser": "^7.2.0",
     "@vitejs/plugin-react": "^4.2.1",

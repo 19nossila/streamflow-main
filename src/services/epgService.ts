@@ -1,10 +1,10 @@
 
-import { apiService } from './api';
-import { Channel, EpgProgram } from '../types';
+import { EpgChannel, EpgProgram } from '../types';
 import { parseString } from 'xml2js';
 
 // Helper to decode HTML entities
 const decodeHtmlEntities = (text: string): string => {
+    if (!text) return '';
     return text
         .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
@@ -14,29 +14,25 @@ const decodeHtmlEntities = (text: string): string => {
         .replace(/&#39;/g, "'");
 };
 
-
-// 1. Core EPG Parsing and Processing Logic
-// This function will be responsible for fetching EPG data from a URL,
-// parsing it (assuming XMLTV format), and transforming it into a structured format.
 const parseXmltv = (xml: string): Promise<{ channels: EpgChannel[], programs: EpgProgram[] }> => {
     return new Promise((resolve, reject) => {
         parseString(xml, { explicitArray: false, trim: true }, (err, result) => {
-            if (err) {
-                return reject(err);
+            if (err || !result || !result.tv) {
+                return reject(err || new Error("Invalid XMLTV format"));
             }
 
             const epgChannels: EpgChannel[] = (result.tv.channel || []).map((c: any) => ({
                 id: c.$.id,
-                displayName: c['display-name'],
-                icon: c.icon ? c.icon.$.src : null,
+                name: c['display-name'] || '',
+                logo: c.icon ? c.icon.$.src : '',
             }));
 
             const epgPrograms: EpgProgram[] = (result.tv.programme || []).map((p: any) => ({
                 channelId: p.$.channel,
                 title: decodeHtmlEntities(p.title._ || p.title),
-                description: p.desc ? decodeHtmlEntities(p.desc._ || p.desc) : null,
-                startTime: new Date(p.$.start),
-                endTime: new Date(p.$.stop),
+                description: p.desc ? decodeHtmlEntities(p.desc._ || p.desc) : '',
+                start: new Date(p.$.start).getTime(),
+                end: new Date(p.$.stop).getTime(),
             }));
 
             resolve({ channels: epgChannels, programs: epgPrograms });
@@ -44,56 +40,19 @@ const parseXmltv = (xml: string): Promise<{ channels: EpgChannel[], programs: Ep
     });
 };
 
-
-// 2. Service Layer
-// This will be the main interface for the UI to interact with.
-// It will handle fetching, caching, and retrieving EPG data.
 export const epgService = {
-    // Fetches and processes EPG data from a given URL
-    loadEpgFromUrl: async (url: string): Promise<void> => {
+    loadEpgFromUrl: async (url: string): Promise<{ channels: EpgChannel[], programs: EpgProgram[] }> => {
         try {
-            const response = await fetch(url);
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            const response = await fetch(proxyUrl);
             if (!response.ok) {
                 throw new Error(`Failed to fetch EPG data: ${response.statusText}`);
             }
             const xml = await response.text();
-            const { channels, programs } = await parseXmltv(xml);
-
-            // Here, instead of a local database, we send the parsed data to our backend via apiService
-            await apiService.saveEpgData(channels, programs);
-
+            return await parseXmltv(xml);
         } catch (error) {
             console.error("Error loading EPG data:", error);
-            throw error; // Re-throw for the UI to handle
+            throw error;
         }
     },
-
-    // Retrieves EPG programs for a specific channel
-    getProgramsForChannel: async (channelId: string): Promise<EpgProgram[]> => {
-        // Fetch from our backend API
-        return apiService.getProgramsForChannel(channelId);
-    },
-
-    // Gets the current program for a given channel
-    getCurrentProgram: async (channelId: string): Promise<EpgProgram | null> => {
-        const now = new Date();
-        const programs = await apiService.getProgramsForChannel(channelId);
-        return programs.find(p => p.startTime <= now && p.endTime > now) || null;
-    },
-
-    // Gets the next program for a given channel
-    getNextProgram: async (channelId: string): Promise<EpgProgram | null> => {
-        const now = new Date();
-        const programs = await apiService.getProgramsForChannel(channelId);
-        return programs.find(p => p.startTime > now) || null;
-    }
 };
-
-// 3. Types
-// We need to define the EPG-specific types.
-// I'll add these to a new `epg.ts` file inside `src/types` to keep things organized.
-export interface EpgChannel {
-  id: string;
-  displayName: string;
-  icon: string | null;
-}

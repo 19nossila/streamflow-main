@@ -18,7 +18,7 @@ const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onPlay, onBack
         <div className="absolute inset-0 overflow-hidden">
           <img 
             src={movie.logo || ''} 
-            alt={movie.name} 
+            alt={movie.title} 
             className="w-full h-full object-cover object-center opacity-30"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0B0C10] via-[#0B0C10]/80 to-transparent"></div>
@@ -30,7 +30,7 @@ const MovieDetailPage: React.FC<MovieDetailPageProps> = ({ movie, onPlay, onBack
 
         <div className="absolute bottom-0 left-0 p-8 z-10 w-full">
           <div className="max-w-3xl">
-            <h1 className="text-4xl lg:text-6xl font-black tracking-tighter mb-2">{movie.name}</h1>
+            <h1 className="text-4xl lg:text-6xl font-black tracking-tighter mb-2">{movie.title}</h1>
             <div className="flex items-center gap-4 text-gray-300 mb-4">
               {movie.rating && <div className="flex items-center gap-1 text-yellow-400"><Star size={16} fill="currentColor" /> <span className="font-bold">{movie.rating}</span></div>}
               {movie.year && <span>{movie.year}</span>}

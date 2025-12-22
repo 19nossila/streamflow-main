@@ -32,7 +32,7 @@ const HomePage: React.FC<HomePageProps> = ({
       items = items.filter(i => i.group === selectedGroup);
     }
     if (searchQuery) {
-      items = items.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      items = items.filter(i => i.title.toLowerCase().includes(searchQuery.toLowerCase()));
     }
     return items;
   }, [playlistData.items, selectedGroup, searchQuery]);
@@ -79,9 +79,7 @@ const HomePage: React.FC<HomePageProps> = ({
         <main className="flex-1 flex flex-col w-full h-full overflow-y-auto scrollbar-hide bg-[#07080a]">
           <ContentGrid 
               items={filteredItems}
-              groups={playlistData.groups}
               onSelectItem={handleSelectItem}
-              selectedGroup={selectedGroup}
           />
         </main>
       </div>

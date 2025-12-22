@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Series, Episode } from '../../types';
 import { ArrowLeft, Play, Star } from 'lucide-react';
 
@@ -10,9 +10,23 @@ interface SeriesDetailPageProps {
 }
 
 const SeriesDetailPage: React.FC<SeriesDetailPageProps> = ({ series, onPlayEpisode, onBack }) => {
-  const [selectedSeason, setSelectedSeason] = useState(series.seasons[0]?.seasonNumber || 1);
+  // Group episodes by season
+  const seasons = useMemo(() => {
+    const seasonMap = new Map<number, Episode[]>();
+    series.episodes.forEach(episode => {
+      const seasonNum = episode.season || 1;
+      if (!seasonMap.has(seasonNum)) {
+        seasonMap.set(seasonNum, []);
+      }
+      seasonMap.get(seasonNum)!.push(episode);
+    });
+    return Array.from(seasonMap.entries())
+      .map(([seasonNumber, episodes]) => ({ seasonNumber, episodes }))
+      .sort((a, b) => a.seasonNumber - b.seasonNumber);
+  }, [series.episodes]);
 
-  const activeSeason = series.seasons.find(s => s.seasonNumber === selectedSeason);
+  const [selectedSeason, setSelectedSeason] = useState(seasons[0]?.seasonNumber || 1);
+  const activeSeason = seasons.find(s => s.seasonNumber === selectedSeason);
 
   return (
     <div className="w-full h-full bg-[#0B0C10] text-white overflow-y-auto">
@@ -21,7 +35,7 @@ const SeriesDetailPage: React.FC<SeriesDetailPageProps> = ({ series, onPlayEpiso
         <div className="absolute inset-0 overflow-hidden">
           <img 
             src={series.logo || ''} 
-            alt={series.name} 
+            alt={series.title} 
             className="w-full h-full object-cover object-center opacity-30"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0B0C10] to-transparent"></div>
@@ -32,7 +46,7 @@ const SeriesDetailPage: React.FC<SeriesDetailPageProps> = ({ series, onPlayEpiso
         </button>
 
         <div className="absolute bottom-0 left-0 p-8 z-10">
-          <h1 className="text-4xl lg:text-5xl font-black tracking-tighter mb-2">{series.name}</h1>
+          <h1 className="text-4xl lg:text-5xl font-black tracking-tighter mb-2">{series.title}</h1>
           <div className="flex items-center gap-4 text-gray-300">
             {series.rating && <div className="flex items-center gap-1 text-yellow-400"><Star size={16} fill="currentColor" /> <span className="font-bold">{series.rating}</span></div>}
             {series.year && <span>{series.year}</span>}
@@ -54,7 +68,7 @@ const SeriesDetailPage: React.FC<SeriesDetailPageProps> = ({ series, onPlayEpiso
             onChange={(e) => setSelectedSeason(Number(e.target.value))}
             className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 w-full md:w-auto"
           >
-            {series.seasons.map(season => (
+            {seasons.map(season => (
               <option key={season.seasonNumber} value={season.seasonNumber}>
                 Season {season.seasonNumber}
               </option>
@@ -72,16 +86,16 @@ const SeriesDetailPage: React.FC<SeriesDetailPageProps> = ({ series, onPlayEpiso
               className="group bg-gray-900 rounded-lg overflow-hidden text-left transition-transform hover:scale-105 shadow-lg"
             >
               <div className="relative aspect-video bg-gray-800">
-                 <img src={episode.logo || series.logo || ''} alt={`Episode ${episode.episodeNumber}`} className="w-full h-full object-cover"/>
+                 <img src={episode.logo || series.logo || ''} alt={`Episode ${episode.episode}`} className="w-full h-full object-cover"/>
                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <Play size={48} className="text-white"/>
                  </div>
                  <span className="absolute top-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded-md">
-                    E{episode.episodeNumber}
+                    E{episode.episode}
                  </span>
               </div>
               <div className="p-3">
-                <h3 className="font-bold text-sm truncate">{`S${episode.seasonNumber} E${episode.episodeNumber} - ${episode.name}`}</h3>
+                <h3 className="font-bold text-sm truncate">{`S${episode.season} E${episode.episode} - ${episode.title}`}</h3>
               </div>
             </button>
           ))}
