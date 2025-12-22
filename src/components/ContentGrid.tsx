@@ -1,18 +1,17 @@
-
 import React from 'react';
-import { ContentItem, Series } from '../types';
+import { ContentItem } from '../types';
 import ContentCard from './ContentCard';
-import { Virtuoso, VirtuosoGrid } from 'react-virtuoso';
+import { VirtuosoGrid } from 'react-virtuoso';
 
 interface ContentGridProps {
   items: ContentItem[];
-  groups: string[];
   onSelectItem: (item: ContentItem) => void;
-  selectedGroup: string | null;
 }
 
 // --- Grid Components for VirtuosoGrid ---
-const GridList = React.forwardRef<HTMLDivElement>(({ children, ...props }, ref) => (
+// We define them with explicit types for props to ensure type safety.
+
+const GridList = React.forwardRef<HTMLDivElement, React.PropsWithChildren<{}>>(({ children, ...props }, ref) => (
     <div
       ref={ref}
       {...props}
@@ -22,71 +21,35 @@ const GridList = React.forwardRef<HTMLDivElement>(({ children, ...props }, ref) 
     </div>
 ));
 
-const GridItem = ({ children, ...props }: { children: React.ReactNode }) => (
+const GridItem = ({ children, ...props }: React.PropsWithChildren<{}>) => (
     <div {...props}>
       {children}
     </div>
 );
 
 // --- Main ContentGrid Component ---
-const ContentGrid: React.FC<ContentGridProps> = ({ items, groups, onSelectItem, selectedGroup }) => {
-
-  const groupedItems = React.useMemo(() => {
-    const groupMap: { [key: string]: ContentItem[] } = {};
-    items.forEach(item => {
-      const group = item.group || 'Uncategorized';
-      if (!groupMap[group]) {
-        groupMap[group] = [];
-      }
-      groupMap[group].push(item);
-    });
-    return groupMap;
-  }, [items]);
-
-  // RENDER A SPECIFIC GROUP (VIRTUALIZED GRID)
-  if (selectedGroup) {
-    const itemsInGroup = items.filter(i => i.group === selectedGroup);
-    return (
-      <VirtuosoGrid
-        style={{ height: '100%' }}
-        totalCount={itemsInGroup.length}
-        components={{
-            List: GridList,
-            Item: GridItem,
-        }}
-        itemContent={index => (
-            <ContentCard item={itemsInGroup[index]} onSelect={onSelectItem} />
-        )}
-        data={itemsInGroup}
-      />
-    );
+const ContentGrid: React.FC<ContentGridProps> = ({ items, onSelectItem }) => {
+  if (!items || items.length === 0) {
+    return <div className="p-6 text-center text-gray-400">No content available in this group.</div>;
   }
 
-  const filteredGroups = groups.filter(group => groupedItems[group] && groupedItems[group].length > 0);
-
-  // RENDER ALL GROUPS (VIRTUALIZED LIST OF HORIZONTAL SCROLLS)
   return (
-    <Virtuoso
-        style={{ height: '100%' }}
-        data={filteredGroups}
-        className="py-6"
-        itemContent={(_index, group) => {
-            const itemsInGroup = groupedItems[group];
-            return (
-                <div key={group} className="pb-8">
-                    <h2 className="text-xl font-bold text-white px-6 mb-3 capitalize">{group}</h2>
-                    <div className="px-6 overflow-x-auto scrollbar-hide">
-                        <div className="flex flex-nowrap gap-4 w-max">
-                            {itemsInGroup.map(item => (
-                                <div key={item.id} className="w-40 flex-shrink-0">
-                                    <ContentCard item={item} onSelect={onSelectItem} />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            );
-        }}
+    <VirtuosoGrid
+      style={{ height: 'calc(100vh - 8rem)' }} // Adjust height as needed
+      totalCount={items.length}
+      components={{
+        List: GridList,
+        Item: GridItem,
+      }}
+      itemContent={(index) => {
+        const item = items[index];
+        return (
+          <ContentCard 
+            item={item} 
+            onSelect={() => onSelectItem(item)} 
+          />
+        );
+      }}
     />
   );
 };
