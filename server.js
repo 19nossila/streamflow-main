@@ -70,8 +70,8 @@ app.use(cors({
 }));
 
 // Middleware
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+app.use(bodyParser.json({ limit: '50mb' })); // Aumentado para 50mb para permitir uploads de M3U maiores
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true })); // Aumentado também
 
 // Helper para validar resultados do express-validator
 const validate = (req, res, next) => {
@@ -248,7 +248,7 @@ app.post('/api/playlists/:playlistId/sources', [
   authenticateToken, 
   isAdmin,
   param('playlistId').isInt(),
-  body('type').isIn(['m3u', 'xtream']),
+  body('type').isIn(['m3u', 'xtream', 'file', 'url']), // Adicionado 'file' e 'url' para validação
   body('content').isString().notEmpty(),
   body('identifier').isString().trim().notEmpty().escape(),
   validate

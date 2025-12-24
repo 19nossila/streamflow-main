@@ -234,21 +234,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
       setUploadLoading(true);
       clearMessages();
       let processed = 0;
+      let successfulUploads = 0;
+      let failedUploads: string[] = [];
+
       Array.from(files).forEach(file => {
           const reader = new FileReader();
           reader.onload = async (event) => {
               try {
                   const content = event.target?.result as string;
                   await storageService.addSourceToPlaylist(playlistId, { type: 'file', content, identifier: file.name });
-              } catch (e) { console.error(e); } 
+                  successfulUploads++;
+              } catch (e) {
+                  console.error(`Error uploading file ${file.name}:`, e);
+                  failedUploads.push(file.name);
+              } 
               finally {
                   processed++;
                   if (processed === files.length) {
                       await loadData();
                       setUploadLoading(false);
-                      setSuccessMsg(`Uploaded ${files.length} files.`);
+                      if (failedUploads.length > 0) {
+                          setError(`Uploaded ${successfulUploads} files. Failed to upload: ${failedUploads.join(', ')}.`);
+                      } else {
+                          setSuccessMsg(`Successfully uploaded ${successfulUploads} files.`);
+                      }
+                      e.target.value = ''; // Clear the input so same file can be uploaded again
                   }
               }
+          };
+          reader.onerror = (errorEvent) => {
+            console.error(`File reading error for ${file.name}:`, errorEvent);
+            failedUploads.push(file.name);
+            processed++;
+            if (processed === files.length) {
+                setUploadLoading(false);
+                setError(`Uploaded ${successfulUploads} files. Failed to read/upload: ${failedUploads.join(', ')}.`);
+                e.target.value = '';
+            }
           };
           reader.readAsText(file);
       });
