@@ -18,6 +18,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'seu_segredo_super_seguro_aqui';
 
+// Confiar no primeiro proxy (necessário quando rodando em ambientes como Render.com)
+app.set('trust proxy', 1);
+
 // --- Segurança de Cabeçalhos (Helmet) ---
 app.use(helmet({
   contentSecurityPolicy: {
