@@ -50,6 +50,7 @@ app.use('/api/login', loginLimiter);
 const allowedOrigins = [
   'http://localhost:3000', // Para desenvolvimento do frontend
   'http://localhost:5173', // Outra porta comum do Vite durante o desenvolvimento
+  'https://streamflow-main.onrender.com',
   // Adicione aqui outros domínios de produção, ex: 'https://seuapp.com'
 ];
 
