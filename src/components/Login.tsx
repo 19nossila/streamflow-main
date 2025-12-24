@@ -12,8 +12,9 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [loginMode, setLoginMode] = useState<'standard' | 'xtream'>('standard');
   
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin');
+  // Removendo credenciais hardcoded para admin
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [xtreamCredentials, setXtreamCredentials] = useState({ serverUrl: '', username: '', password: '' });
 
   const [error, setError] = useState('');

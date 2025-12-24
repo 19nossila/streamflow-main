@@ -137,6 +137,8 @@ app.post('/api/login', [
         if (!user) return res.status(401).json({ error: 'Credenciais inválidas' });
 
         const validPassword = await bcrypt.compare(password, user.password);
+        console.log(`[DEBUG LOGIN] Attempt for user: ${username}, Password match: ${validPassword}`); // Debug log
+
         if (!validPassword) return res.status(401).json({ error: 'Credenciais inválidas' });
 
         const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '8h' });
