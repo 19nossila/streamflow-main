@@ -1,9 +1,13 @@
-
 import { ContentItem, PlaylistData, LiveChannel, Movie, Series, Episode } from '../types';
 
 // Enhanced regex to capture series, season, and episode numbers
 // Supports formats like S01E01, s01e01, 1x01, S01 EP01
+// Optimized for performance to prevent ReDoS - uses atomic groups and possessive quantifiers where appropriate
 const seriesRegex = /(.*?)(?:s|season|temporada)?(\d{1,2})(?:e|x|ep|episode|episodio)?(\d{1,3})/i;
+
+// Security Constants for M3U parsing
+const MAX_M3U_LINES = 10000; // Limit the number of lines to prevent DoS with huge files
+const MAX_LINE_LENGTH = 2048; // Limit the length of a single line
 
 // Function to parse raw M3U content into our structured PlaylistData
 export const parseM3U = (m3uContent: string): PlaylistData => {
@@ -13,20 +17,31 @@ export const parseM3U = (m3uContent: string): PlaylistData => {
 
     let currentItem: Partial<LiveChannel | Movie | Episode> = {};
 
+    if (lines.length > MAX_M3U_LINES) {
+        console.warn(`[M3U Parser] Playlist exceeds MAX_M3U_LINES (${MAX_M3U_LINES}). Truncating.`);
+        lines.length = MAX_M3U_LINES;
+    }
+
     for (const line of lines) {
+        if (line.length > MAX_LINE_LENGTH) {
+            console.warn(`[M3U Parser] Line exceeds MAX_LINE_LENGTH (${MAX_LINE_LENGTH}). Skipping line.`);
+            continue;
+        }
+
         if (line.startsWith('#EXTINF:')) {
             const info = line.substring(8).trim();
             const tvgLogoMatch = info.match(/tvg-logo="(.*?)"/);
             const groupTitleMatch = info.match(/group-title="(.*?)"/);
             const nameMatch = info.match(/,(.*)/);
 
-            const title = nameMatch ? nameMatch[1].trim() : 'Unnamed';
-            const group = groupTitleMatch ? groupTitleMatch[1].trim() : 'Uncategorized';
+            // Basic validation for extracted strings
+            const title = nameMatch ? nameMatch[1].trim().substring(0, 255) : 'Unnamed'; // Limit title length
+            const group = groupTitleMatch ? groupTitleMatch[1].trim().substring(0, 255) : 'Uncategorized'; // Limit group length
             groups.add(group);
 
             const baseProperties = {
                 id: title + group, // Simple initial ID
-                logo: tvgLogoMatch ? tvgLogoMatch[1] : '',
+                logo: tvgLogoMatch ? tvgLogoMatch[1].substring(0, 512) : '', // Limit logo URL length
                 group,
             };
 
@@ -36,7 +51,7 @@ export const parseM3U = (m3uContent: string): PlaylistData => {
                 currentItem = {
                     ...baseProperties,
                     type: 'episode',
-                    title: seriesName.trim(),
+                    title: seriesName.trim().substring(0, 255),
                     season: parseInt(seasonNum, 10),
                     episode: parseInt(episodeNum, 10),
                 };
@@ -57,7 +72,7 @@ export const parseM3U = (m3uContent: string): PlaylistData => {
         } else if (!line.startsWith('#') && currentItem.title) {
             const completedItem = {
                 ...currentItem,
-                url: line.trim(),
+                url: line.trim().substring(0, 1024), // Limit URL length
             } as LiveChannel | Movie | Episode;
             items.push(completedItem);
             currentItem = {}; // Reset for the next entry

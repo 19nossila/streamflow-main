@@ -8,9 +8,12 @@ const API_BASE_URL = IS_PROD ? '' : (import.meta.env.VITE_API_URL || 'http://loc
 
 // Helper to perform fetch requests
 async function fetchApi(path: string, options: RequestInit = {}) {
+  const token = localStorage.getItem('auth_token');
+  
   const defaultOptions: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     },
   };
 
@@ -20,6 +23,11 @@ async function fetchApi(path: string, options: RequestInit = {}) {
   const response = await fetch(url, { ...defaultOptions, ...options });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+        // Token expirado ou inválido - poderia redirecionar para o login
+        console.warn("[API] Auth error, clearing token.");
+        localStorage.removeItem('auth_token');
+    }
     const errorData = await response.json().catch(() => ({ message: `Request failed with status: ${response.status}` }));
     throw new Error(errorData.message || errorData.error || 'An unknown API error occurred');
   }
@@ -33,11 +41,16 @@ async function fetchApi(path: string, options: RequestInit = {}) {
 
 export const apiService = {
   // --- Auth ---
-  login: (username: string, password: string): Promise<User> => {
-    return fetchApi('/api/login', {
+  login: async (username: string, password: string): Promise<User> => {
+    const response = await fetchApi('/api/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     });
+    
+    if (response.token) {
+        localStorage.setItem('auth_token', response.token);
+    }
+    return response.user;
   },
 
   // --- Users ---

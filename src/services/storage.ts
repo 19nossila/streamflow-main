@@ -2,6 +2,7 @@ import { User, StoredPlaylist, PlaylistSource } from '../types';
 import { apiService } from './api';
 
 const SESSION_KEY = 'streamflow_session';
+const AUTH_TOKEN_KEY = 'auth_token';
 
 export const storageService = {
   // --- Auth ---
@@ -9,23 +10,20 @@ export const storageService = {
     try {
       const user = await apiService.login(username, password);
       if (user) {
-        // Store session info in localStorage for persistence across reloads
         localStorage.setItem(SESSION_KEY, JSON.stringify(user));
       }
       return user;
     } catch (error) {
       console.error('Login failed:', error);
-      // On failure, ensure session is cleared
       localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(AUTH_TOKEN_KEY);
       return null;
     }
   },
 
   logout: () => {
-    // No need to await an API call if it's just removing local state
     localStorage.removeItem(SESSION_KEY);
-    // If you had a server-side session invalidation, you'd call it here:
-    // return apiService.logout(); 
+    localStorage.removeItem(AUTH_TOKEN_KEY);
   },
 
   getCurrentUser: (): User | null => {
@@ -72,14 +70,12 @@ export const storageService = {
     return apiService.removeSourceFromPlaylist(playlistId, sourceId);
   },
 
-  // --- Sync / Backup (These would need server-side implementation if you want true sync) ---
+  // --- Sync / Backup ---
   exportData: (): Promise<string> => {
-    // This is a placeholder. A real implementation would fetch from a server endpoint.
     return Promise.reject(new Error('Export via server not implemented'));
   },
 
   importData: (jsonString: string): Promise<void> => {
-    // This is a placeholder. A real implementation would post to a server endpoint.
     return Promise.reject(new Error('Import via server not implemented'));
   }
 };
