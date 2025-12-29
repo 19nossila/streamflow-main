@@ -88,29 +88,25 @@ const db = new sqlite3.Database(dbPath, (err) => {
   } else {
     console.log("[SERVER] Connected to the SQLite database.");
     db.serialize(() => {
-        // Adiciona a coluna expiresAt se não existir
-        db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT, expiresAt TEXT)`,
-          (err) => {
-            if (err) {
-              // Se a tabela já existir e a coluna estiver faltando, adiciona a coluna
-              if (err.message.includes("duplicate column name")) return;
-              console.error("Error creating users table or adding expiresAt column:", err.message);
-            } else {
-              // Se a tabela foi criada agora ou a coluna foi adicionada, garantir que a coluna expiresAt exista.
-              // Para usuários existentes sem expiresAt, definir como null (nunca expira)
-              db.run(`PRAGMA table_info(users)`, (err, columns) => {
-                if (err) return console.error("Error checking table info:", err.message);
-                const hasExpiresAt = columns.some(col => col.name === 'expiresAt');
-                if (!hasExpiresAt) {
-                  db.run(`ALTER TABLE users ADD COLUMN expiresAt TEXT`, (err) => {
-                    if (err) console.error("Error adding expiresAt column:", err.message);
-                    else console.log("Column expiresAt added to users table.");
-                  });
-                }
-              });
+        // Cria a tabela de usuários se não existir. A coluna expiresAt é incluída desde o início.
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password TEXT,
+            role TEXT,
+            expiresAt TEXT
+        )`);
+
+        // Tenta adicionar a coluna expiresAt. Se já existir, o SQLite lançará um erro
+        // que podemos ignorar com segurança, pois significa que a coluna já está lá.
+        db.run(`ALTER TABLE users ADD COLUMN expiresAt TEXT`, (err) => {
+            if (err && !err.message.includes("duplicate column name")) {
+                console.error("Error adding expiresAt column:", err.message);
+            } else if (!err) {
+                console.log("Column expiresAt added to users table.");
             }
-          }
-        );
+        });
+
         db.run(`CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)`);
         db.run(`CREATE TABLE IF NOT EXISTS playlist_sources (id INTEGER PRIMARY KEY AUTOINCREMENT, playlist_id INTEGER, type TEXT, content TEXT, identifier TEXT, addedAt TEXT, FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE)`);
         db.run(`CREATE TABLE IF NOT EXISTS epg_channels (id TEXT PRIMARY KEY, displayName TEXT, icon TEXT)`);
