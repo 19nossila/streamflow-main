@@ -4,6 +4,7 @@ export interface User {
   username: string;
   password?: string;
   role: 'admin' | 'user';
+  expiresAt?: string | null; // Adicionado para a funcionalidade de expiração
 }
 
 // Playlist source representation

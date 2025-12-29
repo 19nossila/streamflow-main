@@ -20,13 +20,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
   const [editingPlaylistId, setEditingPlaylistId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [newUser, setNewUser] = useState({ username: '', password: '' });
+  const [newUser, setNewUser] = useState({ username: '', password: '', expiresAt: '' }); // Adicionado expiresAt
   const [newPlaylistName, setNewPlaylistName] = useState('');
   
   const [passwords, setPasswords] = useState({ new: '', confirm: '' });
   
   const [sourceUrls, setSourceUrls] = useState('');
-  const [xtreamCredentials, setXtreamCredentials] = useState({ serverUrl: '', username: '', password: '' });
+  const [xtreamCredentials, setXtreamCredentials] = useState({ serverUrl: '', username: '', password: '', expiresAt: '' });
   const [uploadLoading, setUploadLoading] = useState(false);
   
   const [error, setError] = useState<string | null>(null);
@@ -60,8 +60,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await storageService.addUser({ ...newUser, role: 'user' });
-      setNewUser({ username: '', password: '' });
+      const expiresAt = newUser.expiresAt ? new Date(newUser.expiresAt).toISOString() : null;
+      await storageService.addUser({ ...newUser, role: 'user', expiresAt });
+      setNewUser({ username: '', password: '', expiresAt: '' });
       await loadData();
       clearMessages();
       setSuccessMsg('User added successfully');
@@ -218,7 +219,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
         let m3uContent = '#EXTM3U\n';
         channels.forEach(ch => { m3uContent += `#EXTINF:-1 tvg-id="${ch.id}" tvg-name="${ch.title}" tvg-logo="${ch.logo}" group-title="${ch.group}",${ch.title}\n${ch.url}\n`; });
         await storageService.addSourceToPlaylist(playlistId, { type: 'xtream', content: m3uContent, identifier: `${username}@${serverUrl}` });
-        setXtreamCredentials({ serverUrl: '', username: '', password: '' });
+        setXtreamCredentials({ serverUrl: '', username: '', password: '', expiresAt: '' });
         await loadData();
         setSuccessMsg(`Added ${channels.length} channels from Xtream.`);
     } catch (e: unknown) {
@@ -323,29 +324,50 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onPreview }) 
             <div className="max-w-4xl mx-auto">
               <div className="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
                 <h3 className="text-lg font-bold mb-4">Add New User</h3>
-                <form onSubmit={handleAddUser} className="flex gap-4 items-end">
-                  <div className="flex-1">
+                <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <div className="md:col-span-1">
                     <label className="text-xs text-gray-500 uppercase">Username</label>
                     <input required value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white" />
                   </div>
-                  <div className="flex-1">
+                  <div className="md:col-span-1">
                     <label className="text-xs text-gray-500 uppercase">Password</label>
                     <input required type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white" />
                   </div>
-                  <button type="submit" className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded text-white font-bold">Add</button>
+                  <div className="md:col-span-1">
+                    <label className="text-xs text-gray-500 uppercase">Expires At (Optional)</label>
+                    <input 
+                      type="date" 
+                      value={newUser.expiresAt}
+                      onChange={e => setNewUser({ ...newUser, expiresAt: e.target.value })}
+                      className="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white"
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <button type="submit" className="w-full bg-red-600 hover:bg-red-700 px-6 py-2 rounded text-white font-bold">Add User</button>
+                  </div>
                 </form>
               </div>
 
               <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
                 <table className="w-full text-left">
                   <thead className="bg-gray-900 text-gray-400 text-xs uppercase">
-                    <tr><th className="p-4">Username</th><th className="p-4">Role</th><th className="p-4 text-right">Actions</th></tr>
+                    <tr>
+                      <th className="p-4">Username</th>
+                      <th className="p-4">Role</th>
+                      <th className="p-4">Expiration Date</th> {/* Nova coluna */}
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-700">
                     {users.map(user => (
                       <tr key={user.id}>
                         <td className="p-4">{user.username}</td>
                         <td className="p-4"><span className={`px-2 py-1 rounded text-xs ${user.role === 'admin' ? 'bg-purple-900 text-purple-200' : 'bg-green-900 text-green-200'}`}>{user.role}</span></td>
+                        <td className="p-4">
+                          {user.expiresAt 
+                            ? new Date(user.expiresAt).toLocaleDateString() 
+                            : 'Never'}
+                        </td> {/* Exibindo a data de expiração */}
                         <td className="p-4 text-right">
                           <button onClick={() => handleDeleteUser(user.id)} className="text-red-400 hover:text-red-300 disabled:opacity-30" disabled={user.username === 'admin'}><FaTrash /></button>
                         </td>
