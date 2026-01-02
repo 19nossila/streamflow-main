@@ -36,6 +36,7 @@ interface BaseContentItem {
 // Specific types of content
 export interface LiveChannel extends BaseContentItem {
   type: 'live';
+  description?: string; // Adicionado para permitir descrição em canais ao vivo
 }
 
 export interface Movie extends BaseContentItem {
