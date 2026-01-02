@@ -6,7 +6,7 @@ const seasonEpisodeRegex = /(?:[SsT]\s*(\d{1,3})[EeXx]\s*(\d{1,3}))|(?:(\d{1,3})
 
 // Security Constants for M3U parsing - INCREASED LIMITS
 const MAX_M3U_LINES = 500000; // Increased limit for larger playlists
-const MAX_LINE_LENGTH = 4096; // Increased limit for longer URLs or info strings
+const MAX_LINE_LENGTH = 14096; // Increased limit for longer URLs or info strings
 
 // Function to parse raw M3U content into our structured PlaylistData
 export const parseM3U = (m3uContent: string): PlaylistData => {
