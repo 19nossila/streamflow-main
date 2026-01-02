@@ -2,12 +2,12 @@ import { ContentItem, PlaylistData, LiveChannel, Movie, Series, Episode } from '
 
 // Enhanced regex to capture series, season, and episode numbers
 // Supports formats like S01E01, s01e01, 1x01, S01 EP01
-// Optimized for performance to prevent ReDoS - uses atomic groups and possessive quantifiers where appropriate
+// Optimized for performance to prevent ReDoS - uses atomic groups and possessive - where appropriate
 const seriesRegex = /(.*?)(?:s|season|temporada)?(\d{1,2})(?:e|x|ep|episode|episodio)?(\d{1,3})/i;
 
-// Security Constants for M3U parsing
-const MAX_M3U_LINES = 10000; // Limit the number of lines to prevent DoS with huge files
-const MAX_LINE_LENGTH = 2048; // Limit the length of a single line
+// Security Constants for M3U parsing - INCREASED LIMITS
+const MAX_M3U_LINES = 500000; // Increased limit for larger playlists
+const MAX_LINE_LENGTH = 4096; // Increased limit for longer URLs or info strings
 
 // Function to parse raw M3U content into our structured PlaylistData
 export const parseM3U = (m3uContent: string): PlaylistData => {
